@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TEAM, type Assignee, type Task } from '../models/task';
 import { getTeammateTheme, getInitials } from './TeammateStrip';
+import { getDueTintClasses } from '../utils/dueTint';
+import { serializePromptContext } from '../utils/contextHelper';
 
 interface TaskCardProps {
   task: Task;
   onSelect?: (task: Task) => void;
   onHandoff?: (taskId: string, newAssignee: Assignee) => void;
+  onCopySuccess?: (message: string) => void;
 }
 
 /** '2026-10-20' → '20 Oct'. Parsed as a LOCAL date to avoid UTC off-by-one. */
@@ -20,10 +23,20 @@ function formatDue(iso?: string | null): string {
   });
 }
 
-export default function TaskCard({ task, onSelect, onHandoff }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onSelect,
+  onHandoff,
+  onCopySuccess,
+}: TaskCardProps) {
+  const [copied, setCopied] = useState(false);
+
   const assigneeName = task?.assignee || 'Unassigned';
   const theme = getTeammateTheme(assigneeName);
   const isBug = task?.type === 'bug';
+
+  // Milestone 8: due-tint time-based state and styling
+  const dueTint = getDueTintClasses(task.dueDate, task.status);
 
   function handleHandoffChange(e: React.ChangeEvent<HTMLSelectElement>) {
     e.stopPropagation();
@@ -33,10 +46,28 @@ export default function TaskCard({ task, onSelect, onHandoff }: TaskCardProps) {
     }
   }
 
+  // Milestone 10: Copy Context button handler
+  async function handleCopyContext(e: React.MouseEvent) {
+    e.stopPropagation();
+    const markdown = serializePromptContext(task);
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      if (onCopySuccess) {
+        onCopySuccess('Prompt context copied. Ready to paste into AI.');
+      }
+    } catch (err) {
+      console.error('Failed to copy to clipboard', err);
+    }
+  }
+
   return (
     <article
       onClick={onSelect ? () => onSelect(task) : undefined}
-      className={`group relative rounded-xl border border-border-subtle bg-surface-card p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-accent/40 hover:bg-surface-card-hover hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
+      className={`group relative rounded-xl border p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
+        dueTint.borderClass
+      } ${
         isBug
           ? 'border-l-4 border-l-type-bug'
           : 'border-l-4 border-l-type-feature'
@@ -95,8 +126,83 @@ export default function TaskCard({ task, onSelect, onHandoff }: TaskCardProps) {
         </p>
       )}
 
+      {/* Due date badge (Milestone 8 due-tint) */}
+      {task.dueDate ? (
+        <div className="mt-2.5 flex items-center justify-between gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-mono border ${dueTint.badgeClass}`}
+            title={`Due date: ${task.dueDate} (${dueTint.label})`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${dueTint.dotClass}`}
+              aria-hidden="true"
+            />
+            <span>{formatDue(task.dueDate)}</span>
+            <span className="opacity-80">· {dueTint.label}</span>
+          </span>
+
+          {/* Milestone 10: "Copy Context" button on card */}
+          <button
+            type="button"
+            onClick={handleCopyContext}
+            title="Copy prompt context briefing for AI"
+            className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-mono transition ${
+              copied
+                ? 'border-brand-accent bg-brand-accent text-white'
+                : 'border-border-subtle bg-surface-page/90 text-text-muted hover:border-brand-accent hover:text-brand-accent'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Copy Context</span>
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-2.5 flex justify-end">
+          {/* Milestone 10: "Copy Context" button even if no due date */}
+          <button
+            type="button"
+            onClick={handleCopyContext}
+            title="Copy prompt context briefing for AI"
+            className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-mono transition ${
+              copied
+                ? 'border-brand-accent bg-brand-accent text-white'
+                : 'border-border-subtle bg-surface-page/90 text-text-muted hover:border-brand-accent hover:text-brand-accent'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Copy Context</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Footer: Prominent Assignee Badge + "Hand off to..." Dropdown (M7 task-owner) */}
-      <footer className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2.5 font-mono text-[11px] text-text-muted">
+      <footer className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2.5 font-mono text-[11px] text-text-muted">
         {/* Prominent Assignee Avatar Badge */}
         <div
           className="flex items-center gap-1.5"
@@ -137,13 +243,6 @@ export default function TaskCard({ task, onSelect, onHandoff }: TaskCardProps) {
             ))}
           </select>
         </div>
-
-        {/* Due date */}
-        {task.dueDate ? (
-          <div className="w-full text-right text-[10px] text-text-muted opacity-80">
-            <time dateTime={task.dueDate}>Due {formatDue(task.dueDate)}</time>
-          </div>
-        ) : null}
       </footer>
     </article>
   );

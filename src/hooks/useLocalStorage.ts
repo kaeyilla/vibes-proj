@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 
 /**
- * A tiny localStorage hook — survives reloads, no library needed.
+ * A tiny typed localStorage hook — survives reloads, no library needed.
  *
  * Usage:
- *   const [tasks, setTasks] = useLocalStorage('vibetracker.tasks', []);
+ *   const [tasks, setTasks] = useLocalStorage<Task[]>('vibetracker.tasks', []);
  */
-export function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
     try {
       const raw = window.localStorage.getItem(key);
-      return raw != null ? JSON.parse(raw) : initialValue;
+      return raw != null ? (JSON.parse(raw) as T) : initialValue;
     } catch {
       return initialValue;
     }
