@@ -49,8 +49,8 @@ export default function App() {
         targetStatus === 'in-progress'
           ? 'In Progress'
           : targetStatus === 'review'
-          ? 'Review'
-          : 'To Do';
+            ? 'Review'
+            : 'To Do';
       setToastMessage(`Moved "${task.title}" to ${stageLabel}.`);
     }
   }
@@ -94,17 +94,17 @@ export default function App() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-5">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-text-primary">
-            VibeSync
+            DIVERSIFIED
             <span className="relative flex h-2 w-2" aria-hidden="true">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-accent opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-accent" />
             </span>
             <span className="rounded border border-border-hover px-1.5 py-0.5 font-mono text-[10px] font-normal text-text-muted">
-              v1.0
+              v1.1
             </span>
           </h1>
           <p className="mt-1 text-sm text-text-muted">
-            <span className="font-mono text-brand-accent">DIVERSIFIED</span> · The ultimate vibecoding project for max aura
+            <span className="font-mono text-brand-accent">24045235</span> · The ultimate kanban board for maximum aura
           </p>
         </div>
 
