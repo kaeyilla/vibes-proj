@@ -1,6 +1,6 @@
 # Vibecoding Project Tracker — Hackathon Starter
 
-You're forking this repo as the starting point for the **UXD Vibecoding Hackathon 2026**. The goal of the hackathon is to ship a Vibecoding Project Tracker in ~3 hours: a Kanban-style tool that tracks your vibecoding tasks and stores the prompts that produced them. Edit something else ig
+You're forking this repo as the starting point for the **UXD Vibecoding Hackathon 2026**. The goal of the hackathon is to ship a Vibecoding Project Tracker in ~3 hours: a Kanban-style tool that tracks your vibecoding tasks and stores the prompts that produced them.
 
 This starter gives you:
 
@@ -11,7 +11,7 @@ This starter gives you:
 - A `useLocalStorage` hook so persistence is one line.
 - Empty TODO markers for every milestone, so AI tools can find them.
 
-What you build, starting at M4:
+What you build, starting at M4:..
 
 - The four-column Kanban board.
 - The add / edit / delete modal.
