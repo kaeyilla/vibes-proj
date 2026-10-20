@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AnchorBoard from './components/AnchorBoard';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import TeammateStrip from './components/TeammateStrip';
@@ -14,12 +15,9 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // M7 task-owner state: driver filter & handoff toast
+  // M7 task-owner state: driver filter & handoff/copy toast
   const [selectedDriver, setSelectedDriver] = useState(null);
-  const [handoffToast, setHandoffToast] = useState(null);
-
-  // TODO M11 anchors:
-  //   const [anchors, setAnchors] = useLocalStorage('vibetracker.anchors', [...]);
+  const [toastMessage, setToastMessage] = useState(null);
 
   /**
    * M7 task-owner: Reassign task to another teammate with visual toast confirmation.
@@ -29,13 +27,13 @@ export default function App() {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, assignee: newAssignee } : t))
     );
-    setHandoffToast(`Task handed off to ${newAssignee}. Context is synced.`);
+    setToastMessage(`Task handed off to ${newAssignee}. Context is synced.`);
   }
 
   function handleSaveTask(taskData) {
     const existing = tasks.find((t) => t.id === taskData.id);
     if (existing && existing.assignee !== taskData.assignee) {
-      setHandoffToast(`Task handed off to ${taskData.assignee}. Context is synced.`);
+      setToastMessage(`Task handed off to ${taskData.assignee}. Context is synced.`);
     }
 
     setTasks((prev) => {
@@ -101,7 +99,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* TODO M11 anchors: render the Anchor Board (Presentation / Demo / Report / Documentation) above the board. */}
+      {/* Milestone 11: Deliverable Anchor Board (Presentation / Demo / Report / Documentation) */}
+      <AnchorBoard />
 
       {/* M7 Milestone: Driver Strip showing who is driving what */}
       <TeammateStrip
@@ -110,12 +109,13 @@ export default function App() {
         onSelectTeammate={setSelectedDriver}
       />
 
-      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal & M7 handoff */}
+      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal, M7 handoff, M8 due-tint, M10 copy */}
       <main>
         <Board
           tasks={displayedTasks}
           onSelectTask={handleOpenEdit}
           onHandoff={handleHandoff}
+          onCopySuccess={(msg) => setToastMessage(msg)}
         />
       </main>
 
@@ -132,10 +132,10 @@ export default function App() {
         teamMembers={TEAM}
       />
 
-      {/* M7 Handoff Acknowledgment Toast */}
+      {/* M7 Handoff & M10 Copy Context Acknowledgment Toast */}
       <HandoffToast
-        message={handoffToast}
-        onDismiss={() => setHandoffToast(null)}
+        message={toastMessage}
+        onDismiss={() => setToastMessage(null)}
       />
     </div>
   );
