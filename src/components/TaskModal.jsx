@@ -1,19 +1,76 @@
 import { useState, useEffect, useRef } from 'react';
 import { STAGES, TEAM } from '../models/task';
-import { AI_TOOLS, formatContextTimestamp } from '../utils/contextHelper';
+import {
+  AI_TOOLS,
+  CONTEXT_TEMPLATE,
+  formatContextTimestamp,
+  formatRelativeTime,
+  serializePromptContext,
+} from '../utils/contextHelper';
+
+function MarkdownPreview({ content }) {
+  if (!content || !content.trim()) {
+    return (
+      <p className="text-xs italic text-text-muted">
+        No context provided yet. Write something in the editor to see formatting.
+      </p>
+    );
+  }
+
+  const lines = content.split('\n');
+  return (
+    <div className="space-y-1.5 font-sans text-xs leading-relaxed text-text-primary">
+      {lines.map((line, idx) => {
+        if (line.startsWith('### ')) {
+          return (
+            <h4 key={idx} className="mt-2 text-xs font-semibold text-text-primary">
+              {line.slice(4)}
+            </h4>
+          );
+        }
+        if (line.startsWith('## ')) {
+          return (
+            <h3 key={idx} className="mt-2 text-sm font-semibold text-brand-accent">
+              {line.slice(3)}
+            </h3>
+          );
+        }
+        if (line.startsWith('# ')) {
+          return (
+            <h2 key={idx} className="mt-2 text-base font-bold text-text-primary">
+              {line.slice(2)}
+            </h2>
+          );
+        }
+        if (line.startsWith('**') && line.endsWith('**')) {
+          return (
+            <p key={idx} className="font-semibold text-text-primary">
+              {line.slice(2, -2)}
+            </p>
+          );
+        }
+        if (line.startsWith('- ') || line.startsWith('* ')) {
+          return (
+            <li key={idx} className="ml-4 list-disc text-text-muted">
+              {line.slice(2)}
+            </li>
+          );
+        }
+        if (!line.trim()) {
+          return <div key={idx} className="h-1.5" />;
+        }
+        return (
+          <p key={idx} className="text-text-muted">
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
- * TaskModal — Milestone 5 (CRUD) & Milestone 9 (Context Field)
- * (Teammate C: Juliette Ortega)
- *
- * Modal component for adding, editing, and deleting tasks,
- * complete with curated Prompt Context briefing and AI tool tracking.
- * Styled according to DESIGN.md §4:
- *   - Dark glassmorphism backdrop with blur
- *   - Elevated surface-card (#131B2E)
- *   - Sharp border-subtle (#1E293B)
- *   - Focus rings with brand-primary / brand-accent
- *   - Confirm delete with DESIGN.md §5 microcopy
+ * TaskModal — Milestone 5 (CRUD), Milestone 9 (Context Field) & Milestone 10 (Copy Context)
  */
 export default function TaskModal({
   isOpen,
@@ -36,6 +93,11 @@ export default function TaskModal({
   const [context, setContext] = useState('');
   const [contextTool, setContextTool] = useState(AI_TOOLS[0]);
   const [contextUpdatedAt, setContextUpdatedAt] = useState(null);
+  const [isContextDirty, setIsContextDirty] = useState(false);
+  const [activeTab, setActiveTab] = useState('write'); // 'write' | 'preview'
+
+  // Milestone 10: Copy Context state
+  const [copiedSuccess, setCopiedSuccess] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -56,19 +118,23 @@ export default function TaskModal({
         setContext(task.context || '');
         setContextTool(task.contextTool || AI_TOOLS[0]);
         setContextUpdatedAt(task.contextUpdatedAt || null);
+        setIsContextDirty(false);
       } else {
-        // Reset defaults for new task
+        // Reset defaults for new task with M9 placeholder template
         setTitle('');
         setDescription('');
         setType('feature');
         setStatus('todo');
         setAssignee(teamMembers.length > 0 ? teamMembers[0] : '');
         setDueDate('');
-        // M9 context fields reset
-        setContext('');
+        // M9 placeholder template pre-fill
+        setContext(CONTEXT_TEMPLATE);
         setContextTool(AI_TOOLS[0]);
         setContextUpdatedAt(null);
+        setIsContextDirty(false);
       }
+      setActiveTab('write');
+      setCopiedSuccess(false);
       setShowDeleteConfirm(false);
       setValidationError('');
 
@@ -95,6 +161,35 @@ export default function TaskModal({
 
   if (!isOpen) return null;
 
+  function handleContextChange(e) {
+    setContext(e.target.value);
+    setIsContextDirty(true);
+  }
+
+  // Milestone 10: Copy Context briefing inside modal
+  async function handleModalCopyContext() {
+    const fullBriefing = serializePromptContext({
+      id: isEditMode ? task.id : 'NEW-TASK',
+      title,
+      description,
+      type,
+      status,
+      assignee,
+      dueDate,
+      context,
+      contextTool,
+      contextUpdatedAt,
+    });
+
+    try {
+      await navigator.clipboard.writeText(fullBriefing);
+      setCopiedSuccess(true);
+      setTimeout(() => setCopiedSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy to clipboard', err);
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
 
@@ -107,25 +202,33 @@ export default function TaskModal({
     // Determine if context was modified
     const trimmedContext = context.trim();
     const isContextChanged =
+      isContextDirty ||
       trimmedContext !== (task?.context || '').trim() ||
       contextTool !== (task?.contextTool || AI_TOOLS[0]);
 
     let finalTimestamp = task?.contextUpdatedAt || null;
     if (trimmedContext) {
-      finalTimestamp = isContextChanged ? new Date().toISOString() : (task?.contextUpdatedAt || new Date().toISOString());
+      finalTimestamp = isContextChanged
+        ? new Date().toISOString()
+        : task?.contextUpdatedAt || new Date().toISOString();
     } else {
       finalTimestamp = null;
     }
 
     const payload = {
-      id: isEditMode ? task.id : `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: isEditMode
+        ? task.id
+        : `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       title: title.trim(),
       description: description.trim(),
       type,
       status,
       assignee: assignee || (teamMembers[0] || 'Unassigned'),
       dueDate: dueDate || null,
-      createdDate: isEditMode && task?.createdDate ? task.createdDate : new Date().toISOString().slice(0, 10),
+      createdDate:
+        isEditMode && task?.createdDate
+          ? task.createdDate
+          : new Date().toISOString().slice(0, 10),
       // M9 context fields
       context: trimmedContext,
       contextTool: trimmedContext ? contextTool : null,
@@ -143,6 +246,8 @@ export default function TaskModal({
     }
   }
 
+  const relativeUpdated = formatRelativeTime(contextUpdatedAt);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-page/80 backdrop-blur-sm overflow-y-auto"
@@ -155,7 +260,7 @@ export default function TaskModal({
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="relative w-full max-w-lg my-8 overflow-hidden rounded-xl border border-border-subtle bg-surface-card p-6 shadow-2xl transition-all">
+      <div className="relative w-full max-w-xl my-8 overflow-hidden rounded-xl border border-border-subtle bg-surface-card p-6 shadow-2xl transition-all">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-5">
           <div className="flex items-center gap-2">
@@ -165,7 +270,7 @@ export default function TaskModal({
               }`}
             />
             <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
-              {isEditMode ? 'Edit Task' : 'New Task'}
+              {isEditMode ? `${task.id}: ${task.title}` : 'New Task'}
             </h2>
           </div>
           <button
@@ -251,7 +356,7 @@ export default function TaskModal({
           <div className="grid grid-cols-2 gap-3">
             {/* Type with M6 visual distinction */}
             <div>
-              <label htmlFor="task-type" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+              <label className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
                 Type
               </label>
               <div className="flex gap-2">
@@ -342,31 +447,107 @@ export default function TaskModal({
             </div>
           </div>
 
-          {/* Milestone 9: Curated Prompt Context Field */}
-          <div className="rounded-lg border border-border-subtle bg-surface-page/60 p-3.5 space-y-3">
-            <div className="flex items-center justify-between">
-              <label htmlFor="task-context" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-accent">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                AI Prompt Context (M9)
-              </label>
-              {contextUpdatedAt && (
-                <span className="text-[11px] font-mono text-text-muted">
-                  Updated: {formatContextTimestamp(contextUpdatedAt)}
-                </span>
-              )}
+          {/* Milestone 9: Curated Prompt Context Field + Milestone 10: Copy Context */}
+          <div className="rounded-lg border border-border-subtle bg-surface-page/70 p-3.5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <label htmlFor="task-context" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Context
+                </label>
+                {/* Write / Preview Tab Toggles (M9 stretch) */}
+                <div className="flex items-center rounded-md border border-border-subtle bg-surface-page p-0.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('write')}
+                    className={`px-2 py-0.5 rounded transition ${
+                      activeTab === 'write'
+                        ? 'bg-brand-accent/20 text-brand-accent font-semibold'
+                        : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    Write
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('preview')}
+                    className={`px-2 py-0.5 rounded transition ${
+                      activeTab === 'preview'
+                        ? 'bg-brand-accent/20 text-brand-accent font-semibold'
+                        : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
+
+              {/* Milestone 10: Copy Context button in modal */}
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  id="btn-copy-context-modal"
+                  onClick={handleModalCopyContext}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs font-mono text-brand-accent hover:bg-brand-accent hover:text-white transition active:scale-95"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Context
+                </button>
+
+                {/* Copied to clipboard toast feedback (M10 stretch) */}
+                {copiedSuccess && (
+                  <span className="absolute -bottom-7 right-0 rounded bg-slate-900 border border-brand-accent/50 px-2 py-0.5 text-[10px] font-mono text-brand-accent shadow-lg animate-fade-in z-10 whitespace-nowrap">
+                    Copied to clipboard!
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label htmlFor="task-context-tool" className="text-xs text-text-muted whitespace-nowrap">
-                Source Tool:
+            {/* Textarea or Preview pane */}
+            {activeTab === 'write' ? (
+              <textarea
+                id="task-context"
+                rows={5}
+                value={context}
+                onChange={handleContextChange}
+                placeholder="Curated Markdown briefing for any AI tool..."
+                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2.5 text-xs font-mono text-text-primary placeholder:text-slate-600 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent resize-none leading-relaxed"
+              />
+            ) : (
+              <div className="min-h-[7.5rem] rounded-lg border border-border-subtle bg-surface-page/90 p-3 max-h-48 overflow-y-auto">
+                <MarkdownPreview content={context} />
+              </div>
+            )}
+
+            {/* Last updated timestamp hint (Milestone 9) */}
+            {contextUpdatedAt ? (
+              <div className="text-[11px] font-mono text-text-muted">
+                last updated {relativeUpdated ? `${relativeUpdated} ` : ''}
+                <span className="opacity-70">(contextUpdatedAt: {contextUpdatedAt})</span>
+              </div>
+            ) : (
+              <div className="text-[11px] font-mono text-text-muted opacity-70">
+                Not yet updated (will save timestamp automatically on edit)
+              </div>
+            )}
+
+            {/* Optional AI Tool Dropdown (Milestone 9) */}
+            <div className="pt-1">
+              <label htmlFor="task-context-tool" className="block text-xs font-medium text-text-muted mb-1">
+                Optional AI Context Tool
               </label>
               <select
                 id="task-context-tool"
                 value={contextTool}
-                onChange={(e) => setContextTool(e.target.value)}
-                className="rounded-md border border-border-subtle bg-surface-page px-2.5 py-1 text-xs text-text-primary focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent font-mono"
+                onChange={(e) => {
+                  setContextTool(e.target.value);
+                  setIsContextDirty(true);
+                }}
+                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-1.5 text-xs text-text-primary focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent font-mono"
               >
                 {AI_TOOLS.map((tool) => (
                   <option key={tool} value={tool}>
@@ -375,15 +556,6 @@ export default function TaskModal({
                 ))}
               </select>
             </div>
-
-            <textarea
-              id="task-context"
-              rows={3}
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder="Curated briefing for the next AI / teammate... prompts, design decisions, gotchas, instructions."
-              className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2 text-xs font-mono text-text-primary placeholder:text-slate-600 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent resize-none leading-relaxed"
-            />
           </div>
 
           {/* Footer Actions */}
