@@ -108,8 +108,8 @@ Fill in the owner column. Recommended default in **bold**; change if your team h
 
 | # | Tag | Title | Suggested owner | Final owner |
 |---|---|---|---|---|
-| 3 | `design-done` | Design system + voice (DESIGN.md) | **B** | `A` |
-| 4 | `data-model` | Task model + board view | **A** | `B` |
+| 3 | `design-done` | Design system + voice (DESIGN.md) | **B** | `B` |
+| 4 | `data-model` | Task model + board view | **A** | `A` |
 | 5 | `crud-modal` | Add / edit / delete modal | **A** | `C` |
 | 6 | `tag-style` | Feature / bug colors | **B** | `D` |
 | 7 | `task-owner` | Owner indicator + handoff | **A** | `A` |
