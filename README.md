@@ -11,7 +11,7 @@ This starter gives you:
 - A `useLocalStorage` hook so persistence is one line.
 - Empty TODO markers for every milestone, so AI tools can find them.
 
-What you build, starting at M4:..
+What you build, starting at M4:.
 
 - The four-column Kanban board.
 - The add / edit / delete modal.
