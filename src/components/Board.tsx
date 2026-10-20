@@ -1,11 +1,14 @@
+import React, { useState } from 'react';
 import { STAGES, type Task, type TaskStatus } from '../models/task';
 import TaskCard from './TaskCard';
+import { playDropSound, playDoneLevelUpSound } from '../utils/soundEffects';
 
 interface BoardProps {
   tasks: Task[];
   onSelectTask?: (task: Task) => void;
   onHandoff?: (taskId: string, newAssignee: import('../models/task').Assignee) => void;
   onCopySuccess?: (message: string) => void;
+  onMoveTask?: (taskId: string, targetStatus: TaskStatus) => void;
 }
 
 /**
@@ -45,8 +48,41 @@ export default function Board({
   onSelectTask,
   onHandoff,
   onCopySuccess,
+  onMoveTask,
 }: BoardProps) {
+  const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const byStatus = groupByStatus(tasks);
+
+  function handleDragOver(e: React.DragEvent, status: TaskStatus) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverColumn !== status) {
+      setDragOverColumn(status);
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // Only clear if actually leaving the column container
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragOverColumn(null);
+  }
+
+  function handleDrop(e: React.DragEvent, targetStatus: TaskStatus) {
+    e.preventDefault();
+    setDragOverColumn(null);
+    const taskId = e.dataTransfer.getData('text/plain');
+    if (!taskId) return;
+
+    if (targetStatus === 'done') {
+      playDoneLevelUpSound();
+    } else {
+      playDropSound();
+    }
+
+    if (onMoveTask) {
+      onMoveTask(taskId, targetStatus);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -76,11 +112,20 @@ export default function Board({
       <section aria-label="Kanban board" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {STAGES.map((stage) => {
           const columnTasks = byStatus[stage.id];
+          const isOver = dragOverColumn === stage.id;
+
           return (
             <div
               key={stage.id}
               id={`column-${stage.id}`}
-              className="flex min-h-[24rem] flex-col rounded-xl border border-border-subtle bg-surface-card/40 p-3"
+              onDragOver={(e) => handleDragOver(e, stage.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.id)}
+              className={`flex min-h-[26rem] flex-col rounded-xl border p-3 transition-all duration-200 ${
+                isOver
+                  ? 'border-brand-accent bg-brand-accent/[0.08] ring-2 ring-brand-accent/40 shadow-[0_0_24px_rgba(6,182,212,0.25)] -translate-y-0.5'
+                  : 'border-border-subtle bg-surface-card/40'
+              }`}
             >
               <header className="mb-3 flex items-center justify-between px-1">
                 <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-primary">
@@ -91,6 +136,16 @@ export default function Board({
                   {columnTasks.length}
                 </span>
               </header>
+
+              {/* Drop Target Indicator when dragging over */}
+              {isOver && (
+                <div className="mb-2 flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-brand-accent bg-brand-accent/15 py-2 text-center text-xs font-mono font-medium text-brand-accent animate-pulse">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span>Drop to move to {stage.label}</span>
+                </div>
+              )}
 
               {columnTasks.length === 0 ? (
                 <p className="grid flex-1 place-items-center rounded-lg border-2 border-dashed border-border-subtle p-4 text-center text-xs text-text-muted">

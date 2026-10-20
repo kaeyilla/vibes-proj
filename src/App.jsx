@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import AnchorBoard from './components/AnchorBoard';
+import VibeMeter from './components/VibeMeter';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import TeammateStrip from './components/TeammateStrip';
@@ -15,7 +16,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // M7 task-owner state: driver filter & handoff/copy toast
+  // M7 task-owner state: driver filter & handoff/copy/move toast
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -28,6 +29,30 @@ export default function App() {
       prev.map((t) => (t.id === taskId ? { ...t, assignee: newAssignee } : t))
     );
     setToastMessage(`Task handed off to ${newAssignee}. Context is synced.`);
+  }
+
+  /**
+   * M12 secret-sauce: HTML5 drag-and-drop task movement between columns
+   */
+  function handleMoveTask(taskId, targetStatus) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.status === targetStatus) return;
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: targetStatus } : t))
+    );
+
+    if (targetStatus === 'done') {
+      setToastMessage(`"${task.title}" completed! +500 Aura level up! 🎉`);
+    } else {
+      const stageLabel =
+        targetStatus === 'in-progress'
+          ? 'In Progress'
+          : targetStatus === 'review'
+          ? 'Review'
+          : 'To Do';
+      setToastMessage(`Moved "${task.title}" to ${stageLabel}.`);
+    }
   }
 
   function handleSaveTask(taskData) {
@@ -102,6 +127,9 @@ export default function App() {
       {/* Milestone 11: Deliverable Anchor Board (Presentation / Demo / Report / Documentation) */}
       <AnchorBoard />
 
+      {/* Milestone 12: Vibe Meter / Sprint Aura Heatmap */}
+      <VibeMeter tasks={tasks} />
+
       {/* M7 Milestone: Driver Strip showing who is driving what */}
       <TeammateStrip
         tasks={tasks}
@@ -109,13 +137,14 @@ export default function App() {
         onSelectTeammate={setSelectedDriver}
       />
 
-      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal, M7 handoff, M8 due-tint, M10 copy */}
+      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal, M7 handoff, M8 due-tint, M10 copy, M12 drag & drop */}
       <main>
         <Board
           tasks={displayedTasks}
           onSelectTask={handleOpenEdit}
           onHandoff={handleHandoff}
           onCopySuccess={(msg) => setToastMessage(msg)}
+          onMoveTask={handleMoveTask}
         />
       </main>
 

@@ -3,6 +3,7 @@ import { TEAM, type Assignee, type Task } from '../models/task';
 import { getTeammateTheme, getInitials } from './TeammateStrip';
 import { getDueTintClasses } from '../utils/dueTint';
 import { serializePromptContext } from '../utils/contextHelper';
+import { playPickupSound } from '../utils/soundEffects';
 
 interface TaskCardProps {
   task: Task;
@@ -30,6 +31,7 @@ export default function TaskCard({
   onCopySuccess,
 }: TaskCardProps) {
   const [copied, setCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const assigneeName = task?.assignee || 'Unassigned';
   const theme = getTeammateTheme(assigneeName);
@@ -62,22 +64,51 @@ export default function TaskCard({
     }
   }
 
+  function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
+    playPickupSound();
+  }
+
+  function handleDragEnd() {
+    setIsDragging(false);
+  }
+
   return (
     <article
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onClick={onSelect ? () => onSelect(task) : undefined}
-      className={`group relative rounded-xl border p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
+      className={`group relative rounded-xl border p-3.5 transition-all duration-150 cursor-grab active:cursor-grabbing hover:-translate-y-0.5 hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
         dueTint.borderClass
       } ${
         isBug
           ? 'border-l-4 border-l-type-bug'
           : 'border-l-4 border-l-type-feature'
-      } ${onSelect ? 'cursor-pointer' : ''}`}
+      } ${
+        isDragging
+          ? 'opacity-40 scale-95 ring-2 ring-brand-accent shadow-2xl'
+          : ''
+      }`}
     >
       {/* Header: Title + M6 tag-style visual distinction */}
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-medium leading-snug text-text-primary group-hover:text-brand-accent transition-colors">
-          {task.title || 'Untitled Task'}
-        </h3>
+        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+          {/* Subtle drag handle indicator */}
+          <span
+            className="mt-0.5 text-text-muted/40 group-hover:text-brand-accent/60 transition-colors shrink-0"
+            title="Drag task"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+            </svg>
+          </span>
+          <h3 className="text-sm font-medium leading-snug text-text-primary group-hover:text-brand-accent transition-colors truncate">
+            {task.title || 'Untitled Task'}
+          </h3>
+        </div>
 
         {/* Milestone 6: Feature vs Bug badge with icon and distinct color */}
         <span
