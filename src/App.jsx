@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import Board from './components/Board';
+import { useTasks } from './hooks/useTasks';
 
 /**
  * Vibecoding Project Tracker — starter scaffold.
@@ -21,30 +23,9 @@ import { useState, useEffect } from 'react';
  * Search the file for `TODO M<n>` to find the right hook for each milestone.
  */
 
-/**
- * @typedef {Object} Task
- * @property {string} id
- * @property {string} title
- * @property {string} description
- * @property {'feature'|'bug'} type
- * @property {'todo'|'in-progress'|'review'|'done'} status
- * @property {string} assignee
- * @property {string|null} dueDate     ISO 'YYYY-MM-DD'
- * @property {string} createdDate      ISO 'YYYY-MM-DD'
- */
-
-// The four columns of the board, in render order.
-// Use these IDs everywhere — do not invent new ones.
-export const STAGES = [
-  { id: 'todo', label: 'To Do' },
-  { id: 'in-progress', label: 'In Progress' },
-  { id: 'review', label: 'Review' },
-  { id: 'done', label: 'Done' },
-];
-
-// Replace these placeholders with the three names from PRD §8 before M4.
-// They become the only valid values for `Task.assignee`.
-export const TEAM = ['Teammate A', 'Teammate B', 'Teammate C'];
+// The Task model, board columns (STAGES) and team list (TEAM) now live in
+// src/models/task.ts. Re-exported here so existing imports keep working.
+export { STAGES, TEAM } from './models/task';
 
 /**
  * A tiny localStorage hook — survives reloads, no library needed.
@@ -74,8 +55,9 @@ export function useLocalStorage(key, initialValue) {
 }
 
 export default function App() {
-  // TODO M4 data-model:
-  //   const [tasks, setTasks] = useLocalStorage('vibetracker.tasks', [/* 3-4 seed tasks */]);
+  // M4 data-model: typed, validated, persisted to localStorage (src/hooks/useTasks.ts).
+  // setTasks is unused until M5 (add / edit / delete).
+  const [tasks, setTasks] = useTasks();
   //
   // TODO M5 crud-modal:
   //   const [editing, setEditing] = useState(null);
@@ -84,17 +66,24 @@ export default function App() {
   //   const [anchors, setAnchors] = useLocalStorage('vibetracker.anchors', [...]);
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-surface-page p-6 text-text-primary">
       <header className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Vibecoding Project Tracker
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            VibeSync
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-accent opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-accent" />
+            </span>
+            <span className="rounded border border-border-hover px-1.5 py-0.5 font-mono text-[10px] font-normal text-text-muted">
+              v1.0
+            </span>
           </h1>
-          <p className="text-sm text-slate-500">
-            {/* Replace this line with your team name from PRD §11. */}
-            Team starter
+          <p className="mt-1 text-sm text-text-muted">
+            <span className="font-mono text-brand-accent">DIVERSIFIED</span> · The ultimate vibecoding project for max aura
           </p>
         </div>
+        {/* TODO M5 crud-modal: "+ New Task" button goes here. */}
       </header>
 
       {/* TODO M11 anchors: render the Anchor Board (Presentation / Demo / Report / Documentation) above the board. */}
@@ -109,8 +98,9 @@ export default function App() {
           Add a "+" button that opens a modal with every Task field.
           Clicking a card should open the same modal in edit mode.
       */}
-      <main className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 text-slate-400">
-        Build the four-column board here · M4
+      <main>
+        {/* M5: pass onSelectTask={setEditing} to open the edit modal on click. */}
+        <Board tasks={tasks} />
       </main>
     </div>
   );
