@@ -1,29 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
+import TeammateStrip from './components/TeammateStrip';
+import HandoffToast from './components/HandoffToast';
 import { useTasks } from './hooks/useTasks';
-
-/**
- * Vibecoding Project Tracker — starter scaffold.
- *
- * This file is intentionally almost empty. The boilerplate (Vite, React,
- * Tailwind) is configured for you, plus a few shared constants and a
- * localStorage helper. Everything visible on screen, you build.
- *
- * Where to start (build sequence in Phase 3):
- *   - M4  data-model    : render the four columns and the task cards below.
- *   - M5  crud-modal    : add the "+" button modal and the edit-on-click modal.
- *   - M6  tag-style     : feature vs. bug color coding (uses DESIGN.md §2 colors).
- *   - M7  task-owner    : assignee badge + "Hand off to..." dropdown.
- *   - M8  due-tint      : color cards by due date (uses DESIGN.md §2 due-state colors).
- *   - M9  context       : a curated Context briefing field on the modal.
- *   - M10 copy-prompt   : a "Copy as Prompt Context" button that serializes the task + context.
- *   - M11 anchors       : the Anchor Board above the Kanban.
- *   - M12 secret-sauce  : the one open-ended thing that makes your tracker yours.
- *
- * Search the file for `TODO M<n>` to find the right hook for each milestone.
- */
-
 import { TEAM } from './models/task';
 
 export default function App() {
@@ -34,10 +14,30 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
+  // M7 task-owner state: driver filter & handoff toast
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [handoffToast, setHandoffToast] = useState(null);
+
   // TODO M11 anchors:
   //   const [anchors, setAnchors] = useLocalStorage('vibetracker.anchors', [...]);
 
+  /**
+   * M7 task-owner: Reassign task to another teammate with visual toast confirmation.
+   * Microcopy per DESIGN.md §5: "Task handed off to {name}. Context is synced."
+   */
+  function handleHandoff(taskId, newAssignee) {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, assignee: newAssignee } : t))
+    );
+    setHandoffToast(`Task handed off to ${newAssignee}. Context is synced.`);
+  }
+
   function handleSaveTask(taskData) {
+    const existing = tasks.find((t) => t.id === taskData.id);
+    if (existing && existing.assignee !== taskData.assignee) {
+      setHandoffToast(`Task handed off to ${taskData.assignee}. Context is synced.`);
+    }
+
     setTasks((prev) => {
       const exists = prev.some((t) => t.id === taskData.id);
       if (exists) {
@@ -60,6 +60,11 @@ export default function App() {
     setEditingTask(null);
     setIsModalOpen(true);
   }
+
+  // Tasks filtered by driver if selected in TeammateStrip
+  const displayedTasks = selectedDriver
+    ? tasks.filter((t) => t.assignee === selectedDriver)
+    : tasks;
 
   return (
     <div className="min-h-screen bg-surface-page p-6 text-text-primary font-sans">
@@ -98,9 +103,20 @@ export default function App() {
 
       {/* TODO M11 anchors: render the Anchor Board (Presentation / Demo / Report / Documentation) above the board. */}
 
-      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal */}
+      {/* M7 Milestone: Driver Strip showing who is driving what */}
+      <TeammateStrip
+        tasks={tasks}
+        selectedTeammate={selectedDriver}
+        onSelectTeammate={setSelectedDriver}
+      />
+
+      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal & M7 handoff */}
       <main>
-        <Board tasks={tasks} onSelectTask={handleOpenEdit} />
+        <Board
+          tasks={displayedTasks}
+          onSelectTask={handleOpenEdit}
+          onHandoff={handleHandoff}
+        />
       </main>
 
       {/* M5 Task Modal (Add / Edit / Delete) */}
@@ -114,6 +130,12 @@ export default function App() {
           setEditingTask(null);
         }}
         teamMembers={TEAM}
+      />
+
+      {/* M7 Handoff Acknowledgment Toast */}
+      <HandoffToast
+        message={handoffToast}
+        onDismiss={() => setHandoffToast(null)}
       />
     </div>
   );

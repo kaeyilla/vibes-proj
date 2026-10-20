@@ -4,6 +4,7 @@ import TaskCard from './TaskCard';
 interface BoardProps {
   tasks: Task[];
   onSelectTask?: (task: Task) => void;
+  onHandoff?: (taskId: string, newAssignee: import('../models/task').Assignee) => void;
 }
 
 /**
@@ -38,7 +39,7 @@ function groupByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
   return groups;
 }
 
-export default function Board({ tasks, onSelectTask }: BoardProps) {
+export default function Board({ tasks, onSelectTask, onHandoff }: BoardProps) {
   const byStatus = groupByStatus(tasks);
 
   return (
@@ -68,7 +69,12 @@ export default function Board({ tasks, onSelectTask }: BoardProps) {
             ) : (
               <div className="flex flex-col gap-2">
                 {columnTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onSelect={onSelectTask} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onSelect={onSelectTask}
+                    onHandoff={onHandoff}
+                  />
                 ))}
               </div>
             )}

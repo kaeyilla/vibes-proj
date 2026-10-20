@@ -1,22 +1,11 @@
-import type { Task } from '../models/task';
+import React from 'react';
+import { TEAM, type Assignee, type Task } from '../models/task';
+import { getTeammateTheme, getInitials } from './TeammateStrip';
 
-/** Props are just an interface. `?` means optional. */
 interface TaskCardProps {
   task: Task;
-  /** M5 crud-modal: pass this to open the edit modal when a card is clicked. */
   onSelect?: (task: Task) => void;
-}
-
-/** 'Kaenawah Yilla' → 'KY' */
-function initials(name?: string): string {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || '?';
+  onHandoff?: (taskId: string, newAssignee: Assignee) => void;
 }
 
 /** '2026-10-20' → '20 Oct'. Parsed as a LOCAL date to avoid UTC off-by-one. */
@@ -31,18 +20,27 @@ function formatDue(iso?: string | null): string {
   });
 }
 
-export default function TaskCard({ task, onSelect }: TaskCardProps) {
+export default function TaskCard({ task, onSelect, onHandoff }: TaskCardProps) {
   const assigneeName = task?.assignee || 'Unassigned';
+  const theme = getTeammateTheme(assigneeName);
+
+  function handleHandoffChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    e.stopPropagation();
+    const newAssignee = e.target.value as Assignee;
+    if (newAssignee && newAssignee !== task.assignee && onHandoff) {
+      onHandoff(task.id, newAssignee);
+    }
+  }
 
   return (
     <article
       onClick={onSelect ? () => onSelect(task) : undefined}
-      className={`group rounded-lg border border-border-subtle bg-surface-card p-3 transition duration-150 hover:-translate-y-0.5 hover:border-brand-accent/40 hover:bg-surface-card-hover hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
+      className={`group relative rounded-xl border border-border-subtle bg-surface-card p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-accent/40 hover:bg-surface-card-hover hover:shadow-[0_0_18px_-6px_rgba(6,182,212,0.45)] ${
         onSelect ? 'cursor-pointer' : ''
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-medium leading-snug text-text-primary">
+        <h3 className="text-sm font-medium leading-snug text-text-primary group-hover:text-brand-accent transition-colors">
           {task.title || 'Untitled Task'}
         </h3>
         {/* TODO M6 tag-style: colour this pill (type-feature / type-bug) + add an accent stripe. */}
@@ -57,20 +55,55 @@ export default function TaskCard({ task, onSelect }: TaskCardProps) {
         </p>
       )}
 
-      <footer className="mt-3 flex items-center justify-between font-mono text-[11px] text-text-muted">
-        <span className="flex items-center gap-1.5" title={assigneeName}>
-          <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-primary/20 text-[9px] font-medium text-brand-primary">
-            {initials(assigneeName)}
+      {/* Footer: Prominent Assignee Badge + "Hand off to..." Dropdown (M7 task-owner) */}
+      <footer className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-2.5 font-mono text-[11px] text-text-muted">
+        {/* Prominent Assignee Avatar Badge */}
+        <div
+          className="flex items-center gap-1.5"
+          title={`Assigned to ${assigneeName}`}
+        >
+          <span
+            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold border ${theme.bg} ${theme.text} ${theme.border}`}
+          >
+            {getInitials(assigneeName)}
           </span>
-          {assigneeName.split(' ')[0]}
-        </span>
+          <span className="font-sans text-xs font-medium text-text-primary">
+            {assigneeName.split(' ')[0]}
+          </span>
+        </div>
 
-        {/* TODO M8 due-tint: colour by due state (due-safe / due-warning / due-overdue / due-neutral). */}
+        {/* Hand off to dropdown */}
+        <div
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <label htmlFor={`handoff-${task.id}`} className="sr-only">
+            Hand off task
+          </label>
+          <select
+            id={`handoff-${task.id}`}
+            value={task.assignee}
+            onChange={handleHandoffChange}
+            aria-label="Hand off to..."
+            className="rounded border border-border-subtle bg-surface-page/80 px-2 py-1 text-[10px] text-text-muted transition hover:border-brand-accent hover:text-text-primary focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer"
+          >
+            <option disabled value="">
+              Hand off to...
+            </option>
+            {TEAM.map((member) => (
+              <option key={member} value={member}>
+                → {member.split(' ')[0]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Due date */}
         {task.dueDate ? (
-          <time dateTime={task.dueDate}>Due {formatDue(task.dueDate)}</time>
-        ) : (
-          <span className="opacity-60">No due date</span>
-        )}
+          <div className="w-full text-right text-[10px] text-text-muted opacity-80">
+            <time dateTime={task.dueDate}>Due {formatDue(task.dueDate)}</time>
+          </div>
+        ) : null}
       </footer>
     </article>
   );
