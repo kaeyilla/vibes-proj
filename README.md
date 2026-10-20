@@ -4,7 +4,7 @@ You're forking this repo as the starting point for the **UXD Vibecoding Hackatho
 
 This starter gives you:
 
-- A pre-written **PRD** (`PRD.md`) — read it. You don't write the PRD this year; your Milestone 2 is to review, fill in the team-specific TODOs, and commit.
+- A pre-written **PRD** (`PRD.md`) — read it. You don't write the PRD this year; your Milestone 2 is to review, fill in the team-specific TODOs, and commit
 - A pre-written **DESIGN.md** with the design-system slots Person B fills in during M3 (in parallel with M2).
 - A **Vite + React + Tailwind** scaffold with the boilerplate already configured.
 - The locked `Task` data model and `STAGES` constant in `src/App.jsx`.
