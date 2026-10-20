@@ -44,7 +44,11 @@ export default function HandoffToast({ message, onDismiss }: HandoffToastProps) 
       </div>
 
       <div className="pr-2">
-        <p className="text-xs font-semibold text-text-primary">Ownership Handoff</p>
+        <p className="text-xs font-semibold text-text-primary">
+          {message.includes('copied') || message.includes('Prompt')
+            ? 'Context Copied'
+            : 'Ownership Handoff'}
+        </p>
         <p className="text-xs text-text-muted">{message}</p>
       </div>
 
