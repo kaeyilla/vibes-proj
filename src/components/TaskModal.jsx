@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { STAGES, TEAM } from '../App';
+import { AI_TOOLS, formatContextTimestamp } from '../utils/contextHelper';
 
 /**
- * TaskModal — Milestone 5 (Teammate C: Juliette Ortega)
+ * TaskModal — Milestone 5 (CRUD) & Milestone 9 (Context Field)
+ * (Teammate C: Juliette Ortega)
  *
- * Modal component for adding, editing, and deleting tasks.
+ * Modal component for adding, editing, and deleting tasks,
+ * complete with curated Prompt Context briefing and AI tool tracking.
  * Styled according to DESIGN.md §4:
  *   - Dark glassmorphism backdrop with blur
  *   - Elevated surface-card (#131B2E)
  *   - Sharp border-subtle (#1E293B)
- *   - Focus rings with brand-primary
+ *   - Focus rings with brand-primary / brand-accent
  *   - Confirm delete with DESIGN.md §5 microcopy
  */
 export default function TaskModal({
@@ -28,6 +31,12 @@ export default function TaskModal({
   const [status, setStatus] = useState('todo');
   const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState('');
+
+  // Milestone 9: Prompt Context state
+  const [context, setContext] = useState('');
+  const [contextTool, setContextTool] = useState(AI_TOOLS[0]);
+  const [contextUpdatedAt, setContextUpdatedAt] = useState(null);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -43,6 +52,10 @@ export default function TaskModal({
         setStatus(task.status || 'todo');
         setAssignee(task.assignee || (teamMembers.length > 0 ? teamMembers[0] : ''));
         setDueDate(task.dueDate || '');
+        // M9 context fields
+        setContext(task.context || '');
+        setContextTool(task.contextTool || AI_TOOLS[0]);
+        setContextUpdatedAt(task.contextUpdatedAt || null);
       } else {
         // Reset defaults for new task
         setTitle('');
@@ -51,6 +64,10 @@ export default function TaskModal({
         setStatus('todo');
         setAssignee(teamMembers.length > 0 ? teamMembers[0] : '');
         setDueDate('');
+        // M9 context fields reset
+        setContext('');
+        setContextTool(AI_TOOLS[0]);
+        setContextUpdatedAt(null);
       }
       setShowDeleteConfirm(false);
       setValidationError('');
@@ -87,6 +104,19 @@ export default function TaskModal({
       return;
     }
 
+    // Determine if context was modified
+    const trimmedContext = context.trim();
+    const isContextChanged =
+      trimmedContext !== (task?.context || '').trim() ||
+      contextTool !== (task?.contextTool || AI_TOOLS[0]);
+
+    let finalTimestamp = task?.contextUpdatedAt || null;
+    if (trimmedContext) {
+      finalTimestamp = isContextChanged ? new Date().toISOString() : (task?.contextUpdatedAt || new Date().toISOString());
+    } else {
+      finalTimestamp = null;
+    }
+
     const payload = {
       id: isEditMode ? task.id : `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       title: title.trim(),
@@ -96,10 +126,10 @@ export default function TaskModal({
       assignee: assignee || (teamMembers[0] || 'Unassigned'),
       dueDate: dueDate || null,
       createdDate: isEditMode && task?.createdDate ? task.createdDate : new Date().toISOString().slice(0, 10),
-      // Preserve existing context fields if present (M9 extension hook)
-      ...(task?.context !== undefined && { context: task.context }),
-      ...(task?.contextTool !== undefined && { contextTool: task.contextTool }),
-      ...(task?.contextUpdatedAt !== undefined && { contextUpdatedAt: task.contextUpdatedAt }),
+      // M9 context fields
+      context: trimmedContext,
+      contextTool: trimmedContext ? contextTool : null,
+      contextUpdatedAt: finalTimestamp,
     };
 
     onSave(payload);
@@ -115,7 +145,7 @@ export default function TaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-page/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-page/80 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -125,7 +155,7 @@ export default function TaskModal({
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-border-subtle bg-surface-card p-6 shadow-2xl transition-all">
+      <div className="relative w-full max-w-lg my-8 overflow-hidden rounded-xl border border-border-subtle bg-surface-card p-6 shadow-2xl transition-all">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-5">
           <div className="flex items-center gap-2">
@@ -209,7 +239,7 @@ export default function TaskModal({
             </label>
             <textarea
               id="task-desc"
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What needs to be accomplished and any key context..."
@@ -289,6 +319,50 @@ export default function TaskModal({
                 className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary [color-scheme:dark]"
               />
             </div>
+          </div>
+
+          {/* Milestone 9: Curated Prompt Context Field */}
+          <div className="rounded-lg border border-border-subtle bg-surface-page/60 p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <label htmlFor="task-context" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI Prompt Context (M9)
+              </label>
+              {contextUpdatedAt && (
+                <span className="text-[11px] font-mono text-text-muted">
+                  Updated: {formatContextTimestamp(contextUpdatedAt)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="task-context-tool" className="text-xs text-text-muted whitespace-nowrap">
+                Source Tool:
+              </label>
+              <select
+                id="task-context-tool"
+                value={contextTool}
+                onChange={(e) => setContextTool(e.target.value)}
+                className="rounded-md border border-border-subtle bg-surface-page px-2.5 py-1 text-xs text-text-primary focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent font-mono"
+              >
+                {AI_TOOLS.map((tool) => (
+                  <option key={tool} value={tool}>
+                    {tool}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <textarea
+              id="task-context"
+              rows={3}
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="Curated briefing for the next AI / teammate... prompts, design decisions, gotchas, instructions."
+              className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2 text-xs font-mono text-text-primary placeholder:text-slate-600 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent resize-none leading-relaxed"
+            />
           </div>
 
           {/* Footer Actions */}

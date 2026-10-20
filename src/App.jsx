@@ -213,6 +213,14 @@ export default function App() {
                     {task.description}
                   </p>
                 )}
+                {task.context && (
+                  <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-mono text-brand-accent bg-brand-accent/10 px-2 py-0.5 rounded border border-brand-accent/20 w-fit">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>{task.contextTool || 'AI'} Context</span>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-between text-xs text-text-muted pt-2 border-t border-border-subtle">
                   <span>{task.assignee}</span>
                   {task.dueDate && <span className="font-mono">{task.dueDate}</span>}
