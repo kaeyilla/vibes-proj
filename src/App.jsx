@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import Board from './components/Board';
 import TaskModal from './components/TaskModal';
+import { useTasks } from './hooks/useTasks';
 
 /**
  * Vibecoding Project Tracker — starter scaffold.
@@ -22,34 +24,9 @@ import TaskModal from './components/TaskModal';
  * Search the file for `TODO M<n>` to find the right hook for each milestone.
  */
 
-/**
- * @typedef {Object} Task
- * @property {string} id
- * @property {string} title
- * @property {string} description
- * @property {'feature'|'bug'} type
- * @property {'todo'|'in-progress'|'review'|'done'} status
- * @property {string} assignee
- * @property {string|null} dueDate     ISO 'YYYY-MM-DD'
- * @property {string} createdDate      ISO 'YYYY-MM-DD'
- */
-
-// The four columns of the board, in render order.
-// Use these IDs everywhere — do not invent new ones.
-export const STAGES = [
-  { id: 'todo', label: 'To Do' },
-  { id: 'in-progress', label: 'In Progress' },
-  { id: 'review', label: 'Review' },
-  { id: 'done', label: 'Done' },
-];
-
-// Allowed values for Task.assignee from PRD §8
-export const TEAM = [
-  'Kaenawah Yilla',
-  'Robert Flores',
-  'Juliette Ortega',
-  'Maguette Seck',
-];
+// The Task model, board columns (STAGES) and team list (TEAM) now live in
+// src/models/task.ts. Re-exported here so existing imports keep working.
+export { STAGES, TEAM } from './models/task';
 
 /**
  * A tiny localStorage hook — survives reloads, no library needed.
@@ -79,8 +56,8 @@ export function useLocalStorage(key, initialValue) {
 }
 
 export default function App() {
-  // Task state persisted to localStorage (used by M4 board & M5 modal)
-  const [tasks, setTasks] = useLocalStorage('vibetracker.tasks', []);
+  // M4 data-model & M5 persistence: typed, validated hook with seed fallback
+  const [tasks, setTasks] = useTasks();
 
   // M5 crud-modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,19 +91,21 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-page text-text-primary p-6 font-sans">
+    <div className="min-h-screen bg-surface-page p-6 text-text-primary font-sans">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-              Vibecoding Project Tracker
-            </h1>
-            <span className="rounded-full bg-brand-accent/15 px-2.5 py-0.5 text-xs font-mono font-medium text-brand-accent border border-brand-accent/30">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-text-primary">
+            VibeSync
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-accent opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-accent" />
+            </span>
+            <span className="rounded border border-border-hover px-1.5 py-0.5 font-mono text-[10px] font-normal text-text-muted">
               v1.0
             </span>
-          </div>
-          <p className="text-sm text-text-muted mt-1">
-            <span className="font-semibold text-text-primary">DIVERSIFIED</span> — The ultimate vibecoding project for max aura
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            <span className="font-mono text-brand-accent">DIVERSIFIED</span> · The ultimate vibecoding project for max aura
           </p>
         </div>
 
@@ -148,90 +127,12 @@ export default function App() {
 
       {/* TODO M11 anchors: render the Anchor Board (Presentation / Demo / Report / Documentation) above the board. */}
 
-      {/*
-        TODO M4 data-model (Teammate A):
-          Render a Kanban board with the four columns from STAGES.
-          Each column should display the tasks whose status matches its id.
-          Pre-populate 3-4 mock tasks so the board isn't empty on first load.
-          Pass handleOpenEdit(task) to each card's onClick handler.
-      */}
-      <main className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border-subtle bg-surface-card/40 text-text-muted">
-        <div className="text-center">
-          <p className="font-medium text-text-primary">Build the four-column board here · M4</p>
-          <p className="text-xs text-text-muted mt-1">Reserved for Teammate A (Kaenawah Yilla)</p>
-        </div>
+      {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal */}
+      <main>
+        <Board tasks={tasks} onSelectTask={handleOpenEdit} />
       </main>
 
-      {/* M5 Interactive Task Preview (allows testing Add, Edit, Delete until Teammate A finishes M4 board) */}
-      {tasks.length > 0 && (
-        <section className="mt-8 rounded-xl border border-border-subtle bg-surface-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-text-primary">
-                Stored Tasks ({tasks.length})
-              </h2>
-              <p className="text-xs text-text-muted">
-                Click any card to edit or delete via TaskModal (M5)
-              </p>
-            </div>
-            <span className="text-xs font-mono text-brand-accent bg-brand-accent/10 px-2.5 py-1 rounded border border-brand-accent/20">
-              localStorage synced
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                onClick={() => handleOpenEdit(task)}
-                className="group cursor-pointer rounded-lg border border-border-subtle bg-surface-page p-4 hover:border-brand-accent/50 hover:bg-surface-card-hover transition-all"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handleOpenEdit(task);
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      task.type === 'feature'
-                        ? 'bg-type-feature/15 text-type-feature border border-type-feature/30'
-                        : 'bg-type-bug/15 text-type-bug border border-type-bug/30'
-                    }`}
-                  >
-                    {task.type}
-                  </span>
-                  <span className="text-xs font-mono text-text-muted capitalize">
-                    {task.status}
-                  </span>
-                </div>
-                <h3 className="text-sm font-medium text-text-primary group-hover:text-brand-accent transition-colors">
-                  {task.title}
-                </h3>
-                {task.description && (
-                  <p className="text-xs text-text-muted line-clamp-2 mt-1">
-                    {task.description}
-                  </p>
-                )}
-                {task.context && (
-                  <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-mono text-brand-accent bg-brand-accent/10 px-2 py-0.5 rounded border border-brand-accent/20 w-fit">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>{task.contextTool || 'AI'} Context</span>
-                  </div>
-                )}
-                <div className="mt-3 flex items-center justify-between text-xs text-text-muted pt-2 border-t border-border-subtle">
-                  <span>{task.assignee}</span>
-                  {task.dueDate && <span className="font-mono">{task.dueDate}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* M5 Task Modal */}
+      {/* M5 Task Modal (Add / Edit / Delete) */}
       <TaskModal
         isOpen={isModalOpen}
         task={editingTask}
@@ -246,4 +147,3 @@ export default function App() {
     </div>
   );
 }
-

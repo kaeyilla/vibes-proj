@@ -1,0 +1,260 @@
+/**
+ * Task data model — the single source of truth for PRD §5, §7 and §8.
+ *
+ * TypeScript crash course for this file:
+ *   - `as const` freezes an array/object so TS knows the exact literal values
+ *     (e.g. 'todo') instead of widening them to plain `string`.
+ *   - `(typeof X)[number]` turns such an array into a union type:
+ *       ['a', 'b'] as const  →  'a' | 'b'
+ *     so the constants and the types can never drift apart.
+ *   - `interface` describes the shape of an object.
+ *   - `unknown` is the safe version of `any`: you must check it before using it.
+ *   - `value is Task` (a "type guard") tells TS that if the function returns
+ *     true, `value` really is a Task from then on.
+ */
+
+// ---------------------------------------------------------------------------
+// Constants (runtime values) + the types derived from them
+// ---------------------------------------------------------------------------
+
+/** The four board columns, in render order (PRD §7). */
+export const STAGES = [
+  { id: 'todo', label: 'To Do' },
+  { id: 'in-progress', label: 'In Progress' },
+  { id: 'review', label: 'Review' },
+  { id: 'done', label: 'Done' },
+] as const;
+
+/** 'todo' | 'in-progress' | 'review' | 'done' */
+export type TaskStatus = (typeof STAGES)[number]['id'];
+
+export const TASK_TYPES = ['feature', 'bug'] as const;
+/** 'feature' | 'bug' */
+export type TaskType = (typeof TASK_TYPES)[number];
+
+/** The only valid assignees (PRD §8). */
+export const TEAM = [
+  'Kaenawah Yilla',
+  'Robert Flores',
+  'Juliette Ortega',
+  'Maguette Seck',
+] as const;
+export type Assignee = (typeof TEAM)[number];
+
+/** AI tools a context briefing can come from (M9). */
+export const CONTEXT_TOOLS = [
+  'Claude',
+  'ChatGPT',
+  'Cursor',
+  'Lovable',
+  'Replit',
+  'Other',
+] as const;
+export type ContextTool = (typeof CONTEXT_TOOLS)[number];
+
+/**
+ * Type aliases add meaning without adding runtime checks.
+ * TS still treats these as `string`; they just document intent.
+ */
+export type ISODate = string; // 'YYYY-MM-DD'
+export type ISOTimestamp = string; // full `new Date().toISOString()`
+
+// ---------------------------------------------------------------------------
+// The model
+// ---------------------------------------------------------------------------
+
+/** A single vibecoding task (PRD §5 — locked, change only with team agreement). */
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  type: TaskType;
+  status: TaskStatus;
+  assignee: Assignee;
+  dueDate: ISODate | null;
+  createdDate: ISODate;
+
+  // Added in M9 (context)
+  context: string;
+  contextTool: ContextTool | null;
+  /** Set automatically whenever `context` changes. */
+  contextUpdatedAt: ISOTimestamp | null;
+}
+
+/**
+ * What the "+" modal needs to supply. Only `title` is required; everything
+ * else gets a sensible default. The system-managed fields are excluded.
+ *
+ *   Pick<T, K>    → keep only keys K
+ *   Omit<T, K>    → drop keys K
+ *   Partial<T>    → make every key optional
+ *   A & B         → must satisfy both
+ */
+export type NewTaskInput = Pick<Task, 'title'> &
+  Partial<Omit<Task, 'id' | 'createdDate' | 'contextUpdatedAt'>>;
+
+/** Fields the edit modal is allowed to change. */
+export type TaskChanges = Partial<
+  Omit<Task, 'id' | 'createdDate' | 'contextUpdatedAt'>
+>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Today's date as 'YYYY-MM-DD' in the user's local timezone. */
+export function todayISO(): ISODate {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function newId(): string {
+  // randomUUID exists on localhost/https; fall back to a timestamp otherwise.
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Build a complete Task from the modal's input. */
+export function createTask(input: NewTaskInput): Task {
+  const context = input.context ?? '';
+  return {
+    id: newId(),
+    title: input.title.trim(),
+    description: input.description ?? '',
+    type: input.type ?? 'feature',
+    status: input.status ?? 'todo',
+    assignee: input.assignee ?? TEAM[0],
+    dueDate: input.dueDate ?? null,
+    createdDate: todayISO(),
+    context,
+    contextTool: input.contextTool ?? null,
+    contextUpdatedAt: context ? new Date().toISOString() : null,
+  };
+}
+
+/**
+ * Return a NEW task with `changes` applied (never mutate React state).
+ * Bumps `contextUpdatedAt` only when the context text actually changed.
+ */
+export function updateTask(task: Task, changes: TaskChanges): Task {
+  const contextChanged =
+    changes.context !== undefined && changes.context !== task.context;
+  return {
+    ...task,
+    ...changes,
+    contextUpdatedAt: contextChanged
+      ? new Date().toISOString()
+      : task.contextUpdatedAt,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Validation — localStorage hands us `unknown`, so check before trusting it
+// ---------------------------------------------------------------------------
+
+/** Generic: is `value` one of the strings in `list`? Narrows to that union. */
+function isOneOf<T extends string>(
+  list: readonly T[],
+  value: unknown,
+): value is T {
+  return typeof value === 'string' && (list as readonly string[]).includes(value);
+}
+
+const STATUS_IDS: readonly TaskStatus[] = STAGES.map((s) => s.id);
+
+const isNullableString = (v: unknown): v is string | null =>
+  v === null || typeof v === 'string';
+
+/** Strict check: does `value` match the Task shape exactly? */
+export function isTask(value: unknown): value is Task {
+  if (typeof value !== 'object' || value === null) return false;
+  const t = value as Record<string, unknown>;
+  return (
+    typeof t.id === 'string' &&
+    typeof t.title === 'string' &&
+    typeof t.description === 'string' &&
+    isOneOf(TASK_TYPES, t.type) &&
+    isOneOf(STATUS_IDS, t.status) &&
+    isOneOf(TEAM, t.assignee) &&
+    isNullableString(t.dueDate) &&
+    typeof t.createdDate === 'string' &&
+    typeof t.context === 'string' &&
+    (t.contextTool === null || isOneOf(CONTEXT_TOOLS, t.contextTool)) &&
+    isNullableString(t.contextUpdatedAt)
+  );
+}
+
+/**
+ * Load tasks saved by an older version of the app. Tasks saved before M9 are
+ * missing the context fields, so fill those in before validating. Anything
+ * still invalid is dropped instead of crashing the board.
+ */
+export function parseTasks(raw: unknown): Task[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: unknown) =>
+      typeof item === 'object' && item !== null
+        ? { context: '', contextTool: null, contextUpdatedAt: null, ...item }
+        : item,
+    )
+    .filter(isTask);
+}
+
+// ---------------------------------------------------------------------------
+// Seed data — so the board isn't empty on first load (M4)
+// ---------------------------------------------------------------------------
+
+export const SEED_TASKS: Task[] = [
+  createTask({
+    title: 'Build the four-column board',
+    description: 'Render STAGES as columns and drop each task into its column.',
+    status: 'in-progress',
+    assignee: 'Kaenawah Yilla',
+  }),
+  createTask({
+    title: 'Add / edit / delete modal',
+    description: '"+" opens an empty modal; clicking a card opens it pre-filled.',
+    assignee: 'Juliette Ortega',
+  }),
+  createTask({
+    title: 'Feature vs. bug colours',
+    description: 'Apply the DESIGN.md tag colours to each card.',
+    assignee: 'Maguette Seck',
+  }),
+  createTask({
+    title: 'Due date shows wrong day near midnight',
+    description: 'Use local dates, not UTC, when formatting dueDate.',
+    type: 'bug',
+    status: 'review',
+    assignee: 'Robert Flores',
+    dueDate: todayISO(),
+  }),
+];
+
+// ---------------------------------------------------------------------------
+// Anchor Board (M11)
+// ---------------------------------------------------------------------------
+
+export const ANCHOR_IDS = [
+  'presentation',
+  'demo',
+  'report',
+  'documentation',
+] as const;
+export type AnchorId = (typeof ANCHOR_IDS)[number];
+
+/** One of the four pinned deliverable slots. */
+export interface Anchor {
+  id: AnchorId;
+  label: string;
+  url: string | null;
+}
+
+export const DEFAULT_ANCHORS: Anchor[] = [
+  { id: 'presentation', label: 'Presentation', url: null },
+  { id: 'demo', label: 'Demo', url: null },
+  { id: 'report', label: 'Report', url: null },
+  { id: 'documentation', label: 'Documentation', url: null },
+];
