@@ -100,7 +100,7 @@ Fill these in before tagging `prd-done`:
 | Teammate C | `Juliette Ortega` | `juuliettee` |
 | Teammate C | `Maguette Seck` | `mag1245` |
 
-These three names become the **only** allowed values for `Task.assignee`. No auth — just a dropdown.
+These three names become the **only** allowed values for `Task.assignee`. No auth — just a dropdown
 
 ## 9. Milestone ownership
 
