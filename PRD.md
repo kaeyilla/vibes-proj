@@ -98,7 +98,7 @@ Fill these in before tagging `prd-done`:
 | Teammate A | `Kaenawah Yilla` | `kaeyilla` |
 | Teammate B | `Robert Flores` | `rboy771` |
 | Teammate C | `Juliette Ortega` | `juuliettee` |
-| Teammate C | `Maguette Seck` | `mag1245` |
+| Teammate D | `Maguette Seck` | `mag1245` |
 
 These three names become the **only** allowed values for `Task.assignee`. No auth — just a dropdown
 

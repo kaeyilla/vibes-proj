@@ -36,10 +36,10 @@ import { useState, useEffect } from 'react';
 // The four columns of the board, in render order.
 // Use these IDs everywhere — do not invent new ones.
 export const STAGES = [
-  { id: 'todo',        label: 'To Do' },
+  { id: 'todo', label: 'To Do' },
   { id: 'in-progress', label: 'In Progress' },
-  { id: 'review',      label: 'Review' },
-  { id: 'done',        label: 'Done' },
+  { id: 'review', label: 'Review' },
+  { id: 'done', label: 'Done' },
 ];
 
 // Replace these placeholders with the three names from PRD §8 before M4.
