@@ -194,12 +194,24 @@ export function isTask(value: unknown): value is Task {
 export function parseTasks(raw: unknown): Task[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((item: unknown) =>
-      typeof item === 'object' && item !== null
-        ? { context: '', contextTool: null, contextUpdatedAt: null, ...item }
-        : item,
-    )
-    .filter(isTask);
+    .map((item: unknown): Task | null => {
+      if (typeof item !== 'object' || item === null) return null;
+      const t = item as Record<string, unknown>;
+      return {
+        id: typeof t.id === 'string' && t.id ? t.id : `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        title: typeof t.title === 'string' && t.title ? t.title : 'Untitled Task',
+        description: typeof t.description === 'string' ? t.description : '',
+        type: t.type === 'bug' ? 'bug' : 'feature',
+        status: isOneOf(STATUS_IDS, t.status) ? t.status : 'todo',
+        assignee: isOneOf(TEAM, t.assignee) ? t.assignee : (TEAM[0] || 'Kaenawah Yilla'),
+        dueDate: typeof t.dueDate === 'string' && t.dueDate ? t.dueDate : null,
+        createdDate: typeof t.createdDate === 'string' && t.createdDate ? t.createdDate : todayISO(),
+        context: typeof t.context === 'string' ? t.context : '',
+        contextTool: isOneOf(CONTEXT_TOOLS, t.contextTool) ? t.contextTool : null,
+        contextUpdatedAt: typeof t.contextUpdatedAt === 'string' ? t.contextUpdatedAt : null,
+      };
+    })
+    .filter((t): t is Task => t !== null);
 }
 
 // ---------------------------------------------------------------------------

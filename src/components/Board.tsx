@@ -24,7 +24,17 @@ function groupByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
     review: [],
     done: [],
   };
-  for (const task of tasks) groups[task.status].push(task);
+  if (!Array.isArray(tasks)) return groups;
+
+  for (const task of tasks) {
+    if (!task) continue;
+    const s = task.status;
+    if (s && s in groups) {
+      groups[s].push(task);
+    } else {
+      groups.todo.push(task);
+    }
+  }
   return groups;
 }
 

@@ -8,10 +8,11 @@ const STORAGE_KEY = 'vibetracker.tasks';
 function loadTasks(): Task[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw == null) return SEED_TASKS; // first visit
-    return parseTasks(JSON.parse(raw)); // JSON.parse returns `any` → validate it
+    if (raw == null) return SEED_TASKS;
+    const parsed = parseTasks(JSON.parse(raw));
+    return parsed.length > 0 ? parsed : SEED_TASKS;
   } catch {
-    return SEED_TASKS; // corrupted JSON
+    return SEED_TASKS;
   }
 }
 

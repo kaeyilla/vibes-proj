@@ -8,18 +8,23 @@ interface TaskCardProps {
 }
 
 /** 'Kaenawah Yilla' → 'KY' */
-function initials(name: string): string {
+function initials(name?: string): string {
+  if (!name) return '?';
   return name
     .split(' ')
+    .filter(Boolean)
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || '?';
 }
 
 /** '2026-10-20' → '20 Oct'. Parsed as a LOCAL date to avoid UTC off-by-one. */
-function formatDue(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
+function formatDue(iso?: string | null): string {
+  if (!iso) return '';
+  const parts = iso.split('-').map(Number);
+  if (parts.length < 3 || isNaN(parts[0])) return iso;
+  const [y, m, d] = parts;
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -27,6 +32,8 @@ function formatDue(iso: string): string {
 }
 
 export default function TaskCard({ task, onSelect }: TaskCardProps) {
+  const assigneeName = task?.assignee || 'Unassigned';
+
   return (
     <article
       onClick={onSelect ? () => onSelect(task) : undefined}
@@ -36,11 +43,11 @@ export default function TaskCard({ task, onSelect }: TaskCardProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-medium leading-snug text-text-primary">
-          {task.title}
+          {task.title || 'Untitled Task'}
         </h3>
         {/* TODO M6 tag-style: colour this pill (type-feature / type-bug) + add an accent stripe. */}
         <span className="shrink-0 rounded border border-border-hover px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-muted">
-          {task.type}
+          {task.type || 'feature'}
         </span>
       </div>
 
@@ -51,11 +58,11 @@ export default function TaskCard({ task, onSelect }: TaskCardProps) {
       )}
 
       <footer className="mt-3 flex items-center justify-between font-mono text-[11px] text-text-muted">
-        <span className="flex items-center gap-1.5" title={task.assignee}>
+        <span className="flex items-center gap-1.5" title={assigneeName}>
           <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-primary/20 text-[9px] font-medium text-brand-primary">
-            {initials(task.assignee)}
+            {initials(assigneeName)}
           </span>
-          {task.assignee.split(' ')[0]}
+          {assigneeName.split(' ')[0]}
         </span>
 
         {/* TODO M8 due-tint: colour by due state (due-safe / due-warning / due-overdue / due-neutral). */}

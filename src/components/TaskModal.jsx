@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { STAGES, TEAM } from '../App';
+import { STAGES, TEAM } from '../models/task';
 import { AI_TOOLS, formatContextTimestamp } from '../utils/contextHelper';
 
 /**
