@@ -55,50 +55,50 @@ export default function VibeMeter({ tasks }: VibeMeterProps) {
   // Aura tier labels and colors
   let auraLabel = 'BUILDING MOMENTUM 🚀';
   let auraColor = 'from-brand-accent to-brand-primary';
-  let auraBadgeClass = 'border-brand-accent/40 bg-brand-accent/15 text-brand-accent';
+  let auraBadgeClass = 'border-orange-300 bg-orange-50 text-orange-700 shadow-sm';
 
   if (vibeScore >= 90) {
     auraLabel = 'GOD-TIER AURA 🌟';
-    auraColor = 'from-emerald-400 via-brand-accent to-indigo-500';
-    auraBadgeClass = 'border-emerald-400/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]';
+    auraColor = 'from-emerald-400 via-brand-accent to-brand-primary';
+    auraBadgeClass = 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm';
   } else if (vibeScore >= 75) {
     auraLabel = 'MAXIMUM VIBES 🔥';
-    auraColor = 'from-cyan-400 via-indigo-500 to-fuchsia-500';
-    auraBadgeClass = 'border-cyan-400/50 bg-cyan-500/15 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.3)]';
+    auraColor = 'from-cyan-500 via-brand-primary to-orange-500';
+    auraBadgeClass = 'border-cyan-300 bg-cyan-50 text-cyan-800 shadow-sm';
   } else if (vibeScore >= 60) {
     auraLabel = 'FLOW STATE ⚡';
-    auraColor = 'from-indigo-400 to-cyan-500';
-    auraBadgeClass = 'border-indigo-400/50 bg-indigo-500/15 text-indigo-300';
+    auraColor = 'from-brand-primary to-cyan-500';
+    auraBadgeClass = 'border-purple-300 bg-purple-50 text-purple-800 shadow-sm';
   } else if (vibeScore < 45) {
     auraLabel = 'BUG SQUASH MODE 🛠️';
     auraColor = 'from-rose-500 to-amber-500';
-    auraBadgeClass = 'border-rose-400/50 bg-rose-500/15 text-rose-300';
+    auraBadgeClass = 'border-rose-300 bg-rose-50 text-rose-800 shadow-sm';
   }
 
   return (
     <section
       aria-label="Sprint Aura and Vibe Meter"
-      className="mb-6 rounded-2xl border border-border-subtle bg-surface-card/80 p-4 shadow-xl backdrop-blur-md transition-all"
+      className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         {/* Title + Aura Tier Badge */}
         <div className="flex items-center gap-2.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-accent/20 text-brand-accent">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-100 text-brand-accent">
             <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                 Sprint Aura & Vibe Meter
               </h2>
               <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-semibold border ${auraBadgeClass}`}>
                 {auraLabel}
               </span>
             </div>
-            <p className="text-[11px] text-text-muted mt-0.5">
-              Real-time velocity & code health heatmap · M12 Secret Sauce
+            <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
+              Real-time velocity & code health heatmap
             </p>
           </div>
         </div>
@@ -110,10 +110,10 @@ export default function VibeMeter({ tasks }: VibeMeterProps) {
             type="button"
             onClick={handleToggleSound}
             title={soundEnabled ? 'Mute sound effects' : 'Enable drag & drop sound FX'}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-mono transition active:scale-95 ${
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-mono font-medium transition active:scale-95 shadow-sm ${
               soundEnabled
-                ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white'
-                : 'border-border-subtle bg-surface-page text-text-muted hover:text-text-primary'
+                ? 'border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-600 hover:text-white'
+                : 'border-slate-300 bg-slate-50 text-slate-600 hover:text-slate-900'
             }`}
           >
             {soundEnabled ? (
@@ -135,19 +135,19 @@ export default function VibeMeter({ tasks }: VibeMeterProps) {
           </button>
 
           {/* Vibe Score Display */}
-          <div className="flex items-baseline gap-1 bg-surface-page px-3 py-1 rounded-lg border border-border-subtle">
+          <div className="flex items-baseline gap-1 bg-slate-50 px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
             <span className="font-mono text-lg font-bold text-brand-accent">
               {vibeScore}%
             </span>
-            <span className="font-mono text-[10px] text-text-muted">Vibe</span>
+            <span className="font-mono text-[10px] text-slate-500 font-semibold">Vibe</span>
           </div>
         </div>
       </div>
 
       {/* Dynamic Animated Aura Heatmap Progress Bar */}
-      <div className="relative mb-3 h-2.5 w-full overflow-hidden rounded-full bg-surface-page/90 p-0.5 border border-border-subtle/80">
+      <div className="relative mb-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 p-0.5 border border-slate-200">
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${auraColor} transition-all duration-500 shadow-[0_0_12px_rgba(6,182,212,0.6)]`}
+          className={`h-full rounded-full bg-gradient-to-r ${auraColor} transition-all duration-500 shadow-sm`}
           style={{ width: `${vibeScore}%` }}
         />
       </div>
@@ -155,35 +155,35 @@ export default function VibeMeter({ tasks }: VibeMeterProps) {
       {/* Breakdown Heatmap Metric Chips */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
         {/* Features vs Bugs */}
-        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-page/60 px-2.5 py-1.5">
-          <span className="text-text-muted">Feature Ratio:</span>
-          <span className="font-semibold text-type-feature">
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 shadow-sm">
+          <span className="text-slate-500 font-medium">Feature Ratio:</span>
+          <span className="font-semibold text-emerald-700">
             {featureRatio}% ({features}F / {bugs}B)
           </span>
         </div>
 
         {/* Turnaround / Velocity */}
-        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-page/60 px-2.5 py-1.5">
-          <span className="text-text-muted">Turnaround:</span>
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 shadow-sm">
+          <span className="text-slate-500 font-medium">Turnaround:</span>
           <span className="font-semibold text-brand-accent">
             {completionRatio}% ({doneCount}/{totalTasks} Done)
           </span>
         </div>
 
         {/* In-Flight Work */}
-        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-page/60 px-2.5 py-1.5">
-          <span className="text-text-muted">In Flight:</span>
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 shadow-sm">
+          <span className="text-slate-500 font-medium">In Flight:</span>
           <span className="font-semibold text-brand-primary">
             {inProgressCount + reviewCount} active ({todoCount} queued)
           </span>
         </div>
 
         {/* Deadline Health */}
-        <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-page/60 px-2.5 py-1.5">
-          <span className="text-text-muted">Health:</span>
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 shadow-sm">
+          <span className="text-slate-500 font-medium">Health:</span>
           <span
             className={`font-semibold ${
-              overdueCount > 0 ? 'text-due-overdue animate-pulse' : 'text-due-safe'
+              overdueCount > 0 ? 'text-red-600 animate-pulse' : 'text-emerald-700'
             }`}
           >
             {overdueCount > 0 ? `${overdueCount} Overdue!` : '100% On Track'}

@@ -90,36 +90,62 @@ export default function App() {
     : tasks;
 
   return (
-    <div className="min-h-screen bg-surface-page p-6 text-text-primary font-sans">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-5">
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 text-slate-900 font-sans">
+      {/* Accessibility Skip-to-Content Link for screen readers & keyboard navigation */}
+      <a
+        href="#main-board"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-glow-purple focus:ring-2 focus:ring-brand-accent focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
+      {/* Screen reader live announcement region */}
+      <div
+        id="sr-announcements"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {toastMessage}
+      </div>
+
+      <header role="banner" className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-text-primary">
+          <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-slate-900">
             DIVERSIFIED
-            <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-accent opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-accent" />
+            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-accent opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-accent" />
             </span>
-            <span className="rounded border border-border-hover px-1.5 py-0.5 font-mono text-[10px] font-normal text-text-muted">
+            <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 font-mono text-xs font-bold text-brand-primary shadow-sm">
               v1.1
             </span>
           </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            <span className="font-mono text-brand-accent">24045235</span> · The ultimate kanban board for maximum aura
+          <p className="mt-1 text-xs sm:text-sm font-medium text-slate-500">
+            Sprint tracker & assistive workflow intelligence
           </p>
         </div>
 
-        {/* Milestone 5: + New Task Button */}
+        {/* Milestone 5: New Task Button with single plus icon */}
         <div className="flex items-center gap-3">
           <button
             id="btn-new-task"
             type="button"
             onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 active:scale-95 transition-all"
+            aria-label="Create new task"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-glow-purple border border-brand-violet/30 hover:bg-brand-primary-hover active:scale-95 transition-all"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
             </svg>
-            + New Task
+            <span>New Task</span>
           </button>
         </div>
       </header>
@@ -138,7 +164,7 @@ export default function App() {
       />
 
       {/* M4 Kanban Board: 4 columns with cards, wired to M5 modal, M7 handoff, M8 due-tint, M10 copy, M12 drag & drop */}
-      <main>
+      <main id="main-board" role="main" aria-label="Kanban task board">
         <Board
           tasks={displayedTasks}
           onSelectTask={handleOpenEdit}

@@ -28,11 +28,11 @@ export default function HandoffToast({ message, onDismiss }: HandoffToastProps) 
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-brand-accent/40 bg-surface-card px-4 py-3 shadow-[0_10px_30px_-10px_rgba(6,182,212,0.5)] backdrop-blur-md transition-opacity duration-200 animate-in fade-in slide-in-from-bottom-2"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xl transition-opacity duration-200 animate-in fade-in slide-in-from-bottom-2"
     >
       {/* Sync pulse icon */}
-      <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-brand-accent/15 text-brand-accent">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-lg bg-brand-accent/30 opacity-75" />
+      <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-brand-primary">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-lg bg-brand-primary/20 opacity-75" />
         <svg className="relative h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
@@ -44,18 +44,18 @@ export default function HandoffToast({ message, onDismiss }: HandoffToastProps) 
       </div>
 
       <div className="pr-2">
-        <p className="text-xs font-semibold text-text-primary">
+        <p className="text-xs font-bold text-slate-800">
           {message.includes('copied') || message.includes('Prompt')
             ? 'Context Copied'
             : 'Ownership Handoff'}
         </p>
-        <p className="text-xs text-text-muted">{message}</p>
+        <p className="text-xs text-slate-600 font-medium">{message}</p>
       </div>
 
       <button
         type="button"
         onClick={onDismiss}
-        className="ml-auto rounded p-1 text-text-muted hover:bg-surface-subtle hover:text-text-primary transition"
+        className="ml-auto rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
         aria-label="Dismiss notification"
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

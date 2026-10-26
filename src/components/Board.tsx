@@ -87,24 +87,24 @@ export default function Board({
   return (
     <div className="space-y-3">
       {/* Milestone 8: Board Task Urgency Legend (per slide 8) */}
-      <div className="flex flex-wrap items-center justify-end gap-3 px-1 text-[11px] font-mono text-text-muted">
-        <span className="font-sans text-xs font-medium text-text-primary">
+      <div className="flex flex-wrap items-center justify-end gap-3 px-1 text-[11px] font-mono text-slate-500">
+        <span className="font-sans text-xs font-bold text-slate-700">
           Task Urgency:
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-due-safe" />
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
           <span>More than 2 Days</span>
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-due-warning" />
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
           <span>Less than 24h</span>
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-due-overdue animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
           <span>Past Due</span>
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-due-neutral" />
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-2 w-2 rounded-full bg-slate-400" />
           <span>Complete</span>
         </span>
       </div>
@@ -123,23 +123,23 @@ export default function Board({
               onDrop={(e) => handleDrop(e, stage.id)}
               className={`flex min-h-[26rem] flex-col rounded-xl border p-3 transition-all duration-200 ${
                 isOver
-                  ? 'border-brand-accent bg-brand-accent/[0.08] ring-2 ring-brand-accent/40 shadow-[0_0_24px_rgba(6,182,212,0.25)] -translate-y-0.5'
-                  : 'border-border-subtle bg-surface-card/40'
+                  ? 'border-brand-primary bg-purple-50 ring-2 ring-brand-primary/40 shadow-glow-purple -translate-y-0.5'
+                  : 'border-slate-200 bg-slate-100/75 shadow-sm'
               }`}
             >
               <header className="mb-3 flex items-center justify-between px-1">
-                <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-primary">
-                  <span className={`h-2 w-2 rounded-full ${STAGE_DOT[stage.id]}`} />
+                <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
+                  <span className={`h-2.5 w-2.5 rounded-full ${STAGE_DOT[stage.id]}`} />
                   {stage.label}
                 </h2>
-                <span className="rounded-full bg-surface-subtle px-2 py-0.5 font-mono text-[11px] text-text-muted">
+                <span className="rounded-full bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-600 shadow-sm">
                   {columnTasks.length}
                 </span>
               </header>
 
               {/* Drop Target Indicator when dragging over */}
               {isOver && (
-                <div className="mb-2 flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-brand-accent bg-brand-accent/15 py-2 text-center text-xs font-mono font-medium text-brand-accent animate-pulse">
+                <div className="mb-2 flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-brand-primary bg-brand-primary/10 py-2 text-center text-xs font-mono font-semibold text-brand-primary animate-pulse">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
@@ -148,11 +148,11 @@ export default function Board({
               )}
 
               {columnTasks.length === 0 ? (
-                <p className="grid flex-1 place-items-center rounded-lg border-2 border-dashed border-border-subtle p-4 text-center text-xs text-text-muted">
+                <p className="grid flex-1 place-items-center rounded-lg border-2 border-dashed border-slate-300/80 bg-white/40 p-4 text-center text-xs font-medium text-slate-400">
                   All clear here — ready for the next vibe.
                 </p>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {columnTasks.map((task) => (
                     <TaskCard
                       key={task.id}

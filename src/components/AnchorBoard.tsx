@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DEFAULT_ANCHORS, type Anchor, type AnchorId } from '../models/task';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -28,17 +28,14 @@ const ANCHOR_ICONS: Record<AnchorId, React.ReactNode> = {
 
 /**
  * Deliverable Anchor Board — Milestone 11 (project-deliverables)
- *
- * Pinned banner above the Kanban board for tracking the four final-project deliverables:
- * Presentation, Demo, Report, Documentation.
- * Includes URL inputs, active/empty status dots, and direct external launch buttons.
- * Persisted to localStorage ('vibetracker.anchors').
+ * Collapsed by default so users uncollapse when needed.
  */
 export default function AnchorBoard() {
   const [anchors, setAnchors] = useLocalStorage<Anchor[]>(
     'vibetracker.anchors',
     DEFAULT_ANCHORS
   );
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   function handleUrlChange(id: AnchorId, newUrl: string) {
     const trimmed = newUrl.trim();
@@ -47,32 +44,70 @@ export default function AnchorBoard() {
     );
   }
 
+  const linkedCount = anchors.filter((a: Anchor) => Boolean(a.url)).length;
+
   return (
     <section
       aria-label="Deliverable Anchor Board"
-      className="mb-6 rounded-2xl border border-border-subtle bg-surface-card/70 p-4 shadow-xl backdrop-blur-md"
+      className="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm transition-all overflow-hidden"
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-brand-accent/20 text-brand-accent">
+      {/* Header bar acts as collapse toggle */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={!isCollapsed}
+        aria-controls="deliverable-anchors-content"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsCollapsed(!isCollapsed);
+          }
+        }}
+        className="flex flex-wrap items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
           </div>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
-            Deliverable Anchor Board
-          </h2>
-          <span className="rounded bg-surface-subtle px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
-            Milestone 11
-          </span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              Deliverable Anchor Board
+            </h2>
+          </div>
         </div>
 
-        <span className="font-mono text-[11px] text-text-muted">
-          {anchors.filter((a: Anchor) => Boolean(a.url)).length} / 4 Anchors Linked
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] font-medium text-slate-500">
+            {linkedCount} / 4 Anchors Linked
+          </span>
+          <button
+            type="button"
+            aria-label={isCollapsed ? 'Uncollapse Deliverable Anchor Board' : 'Collapse Deliverable Anchor Board'}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-mono font-medium text-slate-700 hover:border-brand-primary hover:text-brand-primary transition-all shadow-sm"
+          >
+            <span>{isCollapsed ? 'Uncollapse' : 'Collapse'}</span>
+            <svg
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Collapsible Content */}
+      {!isCollapsed && (
+        <div
+          id="deliverable-anchors-content"
+          className="p-4 pt-0 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in duration-200"
+        >
         {anchors.map((anchor: Anchor) => {
           const hasUrl = Boolean(anchor.url);
 
@@ -81,17 +116,17 @@ export default function AnchorBoard() {
               key={anchor.id}
               className={`relative flex flex-col justify-between rounded-xl border p-3 transition-all ${
                 hasUrl
-                  ? 'border-brand-accent/40 bg-surface-card hover:border-brand-accent hover:shadow-[0_0_15px_-5px_rgba(6,182,212,0.3)]'
-                  : 'border-border-subtle bg-surface-page/50 hover:border-border-hover'
+                  ? 'border-brand-primary/40 bg-purple-50/20 shadow-sm hover:border-brand-primary hover:shadow-md'
+                  : 'border-slate-200 bg-slate-50 hover:border-slate-300'
               }`}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className={hasUrl ? 'text-brand-accent' : 'text-text-muted'}>
+                  <span className={hasUrl ? 'text-brand-primary' : 'text-slate-400'}>
                     {ANCHOR_ICONS[anchor.id]}
                   </span>
-                  <span className="text-xs font-semibold text-text-primary">
+                  <span className="text-xs font-semibold text-slate-800">
                     {anchor.label}
                   </span>
                 </div>
@@ -101,25 +136,29 @@ export default function AnchorBoard() {
                   <span
                     className={`h-2.5 w-2.5 rounded-full transition-all ${
                       hasUrl
-                        ? 'bg-brand-accent shadow-[0_0_8px_rgba(6,182,212,0.8)] animate-pulse'
-                        : 'border border-border-hover bg-surface-subtle'
+                        ? 'bg-emerald-500 shadow-sm animate-pulse'
+                        : 'border border-slate-300 bg-slate-200'
                     }`}
                   />
-                  <span className="font-mono text-[10px] text-text-muted">
+                  <span className="font-mono text-[10px] text-slate-500">
                     {hasUrl ? 'Linked' : 'Pending'}
                   </span>
                 </div>
               </div>
 
-              {/* URL Input */}
+              {/* URL Input with Accessible Label */}
               <div className="flex items-center gap-1.5 mt-1">
+                <label htmlFor={`anchor-${anchor.id}`} className="sr-only">
+                  {anchor.label} deliverable URL
+                </label>
                 <input
                   id={`anchor-${anchor.id}`}
                   type="url"
+                  aria-label={`${anchor.label} deliverable URL`}
                   value={anchor.url || ''}
                   onChange={(e) => handleUrlChange(anchor.id, e.target.value)}
                   placeholder="https://..."
-                  className="w-full rounded-md border border-border-subtle bg-surface-page px-2.5 py-1 text-xs font-mono text-text-primary placeholder:text-slate-600 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent"
+                  className="w-full rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                 />
 
                 {hasUrl && (
@@ -127,10 +166,11 @@ export default function AnchorBoard() {
                     href={anchor.url!}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`Open ${anchor.label} link in new tab`}
                     title={`Open ${anchor.label}`}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-brand-accent/40 bg-brand-accent/15 text-brand-accent hover:bg-brand-accent hover:text-white transition"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-brand-primary/40 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
@@ -139,7 +179,8 @@ export default function AnchorBoard() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -11,38 +11,38 @@ export const TEAMMATE_THEMES: Record<
   { bg: string; text: string; border: string; glow: string }
 > = {
   'Kaenawah Yilla': {
-    bg: 'bg-indigo-500/15',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
-    glow: 'rgba(99,102,241,0.25)',
+    bg: 'bg-purple-100',
+    text: 'text-purple-800',
+    border: 'border-purple-300',
+    glow: 'rgba(123,88,207,0.2)',
   },
   'Robert Flores': {
-    bg: 'bg-amber-500/15',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
-    glow: 'rgba(245,158,11,0.25)',
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
+    border: 'border-orange-300',
+    glow: 'rgba(252,109,38,0.2)',
   },
   'Juliette Ortega': {
-    bg: 'bg-cyan-500/15',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
-    glow: 'rgba(6,182,212,0.25)',
+    bg: 'bg-sky-100',
+    text: 'text-sky-800',
+    border: 'border-sky-300',
+    glow: 'rgba(14,165,233,0.2)',
   },
   'Maguette Seck': {
-    bg: 'bg-emerald-500/15',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    glow: 'rgba(16,185,129,0.25)',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800',
+    border: 'border-emerald-300',
+    glow: 'rgba(16,185,129,0.2)',
   },
 };
 
 export function getTeammateTheme(name: string) {
   return (
     TEAMMATE_THEMES[name] || {
-      bg: 'bg-brand-primary/15',
-      text: 'text-brand-primary',
-      border: 'border-brand-primary/30',
-      glow: 'rgba(99,102,241,0.25)',
+      bg: 'bg-purple-100',
+      text: 'text-purple-800',
+      border: 'border-purple-300',
+      glow: 'rgba(123,88,207,0.2)',
     }
   );
 }
@@ -87,23 +87,23 @@ export default function TeammateStrip({
   }
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-xl border border-border-subtle bg-surface-card/60 p-3 backdrop-blur-sm">
-      <div className="flex items-center gap-2 pr-2 border-r border-border-subtle">
-        <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+    <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex items-center gap-2 pr-2 border-r border-slate-200">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
           Drivers:
         </span>
         {selectedTeammate && (
           <button
             type="button"
             onClick={() => onSelectTeammate(null)}
-            className="rounded px-2 py-0.5 font-mono text-[11px] text-brand-accent hover:underline"
+            className="rounded px-2 py-0.5 font-mono text-[11px] font-semibold text-brand-accent hover:underline"
           >
             Show All
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Team driver filters">
         {TEAM.map((member) => {
           const theme = getTeammateTheme(member);
           const isSelected = selectedTeammate === member;
@@ -113,29 +113,32 @@ export default function TeammateStrip({
             <button
               key={member}
               type="button"
+              aria-pressed={isSelected}
+              aria-label={`Filter by driver ${member}. ${stat.active} active tasks.`}
               onClick={() => onSelectTeammate(isSelected ? null : member)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 transition-all ${
+              className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 transition-all shadow-sm ${
                 isSelected
-                  ? `${theme.border} ${theme.bg} ring-1 ring-brand-accent shadow-sm`
-                  : 'border-border-subtle bg-surface-page/60 hover:border-border-hover hover:bg-surface-card-hover'
+                  ? `${theme.border} ${theme.bg} ring-2 ring-brand-accent shadow-glow-purple`
+                  : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
               }`}
             >
               {/* Avatar circle */}
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${theme.bg} ${theme.text} border ${theme.border}`}
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${theme.bg} ${theme.text} border ${theme.border}`}
+                aria-hidden="true"
               >
                 {getInitials(member)}
               </span>
 
-              <span className="text-xs font-medium text-text-primary">
+              <span className="text-xs font-semibold text-slate-800">
                 {member.split(' ')[0]}
               </span>
 
               <span
-                className={`rounded px-1.5 py-0.2 font-mono text-[10px] ${
+                className={`rounded px-1.5 py-0.2 font-mono text-[10px] font-semibold ${
                   stat.active > 0
                     ? `${theme.text} ${theme.bg}`
-                    : 'text-text-muted bg-surface-subtle'
+                    : 'text-slate-500 bg-slate-200/60'
                 }`}
                 title={`${stat.active} active tasks (${stat.total} total)`}
               >

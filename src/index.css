@@ -7,8 +7,62 @@ html, body, #root {
 }
 
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #0b0f17; /* surface-page (DESIGN.md §2) */
-  color: #f8fafc;            /* text-primary */
+  font-family: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Accessibility Focus Ring per specification */
+.task-card:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 3px solid #7b58cf;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(123, 88, 207, 0.35) !important;
+}
+
+/* Fallback high contrast focus support */
+@media (forced-colors: active) {
+  .task-card:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* Futuristic clean custom scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f3f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd2e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9fa8bc;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

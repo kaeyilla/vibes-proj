@@ -98,15 +98,20 @@ export default function TaskModal({
 
   // Milestone 10: Copy Context state
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
 
   const titleInputRef = useRef(null);
+  const modalRef = useRef(null);
+  const previouslyFocusedElement = useRef(null);
 
   // Sync state when task changes or modal opens
   useEffect(() => {
     if (isOpen) {
+      previouslyFocusedElement.current = document.activeElement;
+
       if (task) {
         setTitle(task.title || '');
         setDescription(task.description || '');
@@ -137,27 +142,123 @@ export default function TaskModal({
       setCopiedSuccess(false);
       setShowDeleteConfirm(false);
       setValidationError('');
+      setIsSpeaking(false);
 
-      // Autofocus title
+      // Autofocus title for fast keyboard entry
       setTimeout(() => {
         titleInputRef.current?.focus();
       }, 50);
+    } else {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+      previouslyFocusedElement.current?.focus?.();
     }
   }, [isOpen, task, teamMembers]);
 
-  // Handle escape key
+  // Clean up speech synthesis when component unmounts
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Keyboard accessibility: Escape to close modal & Focus trap for Tab / Shift+Tab
   useEffect(() => {
     if (!isOpen) return;
 
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        setIsSpeaking(false);
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const modalElement = modalRef.current;
+        if (!modalElement) return;
+
+        const focusable = modalElement.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const focusableArray = Array.from(focusable).filter(
+          (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
+        );
+
+        if (focusableArray.length === 0) return;
+
+        const firstElement = focusableArray[0];
+        const lastElement = focusableArray[focusableArray.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Accessibility: Text-to-Speech Web Speech API
+  function speakTask() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported on this browser.');
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const taskDetails = {
+      type: type || 'General',
+      title: title || 'Untitled task',
+      assignee: assignee || 'Unassigned',
+      status: status || 'To Do',
+      dueDate: dueDate || 'None',
+      description: description || 'No description provided.',
+      context: context ? `Prompt context: ${context}` : '',
+    };
+
+    const text = `${taskDetails.type} task: ${taskDetails.title}. Assigned to ${taskDetails.assignee}. Status: ${taskDetails.status}. ${taskDetails.dueDate !== 'None' ? `Due date: ${taskDetails.dueDate}.` : ''} Description: ${taskDetails.description}. ${taskDetails.context}`;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function handleCloseModal() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    onClose();
+  }
 
   if (!isOpen) return null;
 
@@ -235,12 +336,20 @@ export default function TaskModal({
       contextUpdatedAt: finalTimestamp,
     };
 
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
     onSave(payload);
     onClose();
   }
 
   function handleConfirmDelete() {
     if (isEditMode && task?.id && onDelete) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
       onDelete(task.id);
       onClose();
     }
@@ -250,59 +359,102 @@ export default function TaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-page/80 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          handleCloseModal();
         }
       }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      aria-describedby="task-modal-instructions"
     >
-      <div className="relative w-full max-w-xl my-8 overflow-hidden rounded-xl border border-border-subtle bg-surface-card p-6 shadow-2xl transition-all">
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-xl my-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all"
+      >
+        <span id="task-modal-instructions" className="sr-only">
+          Press Tab to navigate through fields, Escape to cancel and close.
+        </span>
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5 gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <span
-              className={`inline-block w-2.5 h-2.5 rounded-full ${
-                type === 'feature' ? 'bg-type-feature' : 'bg-type-bug'
+              className={`inline-block w-3 h-3 rounded-full shrink-0 ${
+                type === 'feature' ? 'bg-emerald-500' : 'bg-red-500'
               }`}
+              aria-hidden="true"
             />
-            <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
+            <h2 id="modal-title" className="text-lg font-bold text-slate-900 truncate">
               {isEditMode ? `${task.id}: ${task.title}` : 'New Task'}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-text-muted hover:text-text-primary p-1 rounded-md transition-colors"
-            aria-label="Close modal"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Accessibility: Text-to-Speech "Read Task Aloud" Button */}
+            <button
+              type="button"
+              onClick={speakTask}
+              aria-label={isSpeaking ? 'Stop reading task aloud' : 'Read task details aloud'}
+              title={isSpeaking ? 'Stop speech' : 'Read task aloud (Web Speech API)'}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition active:scale-95 shadow-sm ${
+                isSpeaking
+                  ? 'border-brand-primary bg-brand-primary text-white shadow-glow-purple animate-pulse'
+                  : 'border-slate-300 bg-slate-50 text-slate-700 hover:border-brand-primary hover:text-brand-primary'
+              }`}
+            >
+              {isSpeaking ? (
+                <>
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                  </span>
+                  <span>Stop Reading</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                  <span>Read Aloud</span>
+                </>
+              )}
+            </button>
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              aria-label="Close modal (Escape)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Delete Confirmation Banner (DESIGN.md §5 microcopy) */}
         {showDeleteConfirm && (
-          <div className="mb-5 rounded-lg border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-200">
-            <p className="font-medium text-red-300">
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <p className="font-semibold text-red-800">
               Delete this task permanently? You can&apos;t undo this action.
             </p>
             <div className="mt-3 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:bg-slate-800 border border-slate-700 transition-colors"
+                className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors bg-white shadow-sm"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors"
+                className="px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm"
               >
                 Yes, Delete
               </button>
@@ -313,15 +465,15 @@ export default function TaskModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {validationError && (
-            <div className="rounded-md bg-red-500/10 border border-red-500/30 p-2.5 text-xs text-red-400">
+            <div className="rounded-md bg-red-50 border border-red-200 p-2.5 text-xs font-semibold text-red-700">
               {validationError}
             </div>
           )}
 
           {/* Title */}
           <div>
-            <label htmlFor="task-title" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
-              Title <span className="text-red-400">*</span>
+            <label htmlFor="task-title" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Title <span className="text-red-500">*</span>
             </label>
             <input
               id="task-title"
@@ -333,13 +485,13 @@ export default function TaskModal({
                 if (validationError) setValidationError('');
               }}
               placeholder="e.g. Scaffold Vite board layout"
-              className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2.5 text-sm text-text-primary placeholder:text-slate-600 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="task-desc" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+            <label htmlFor="task-desc" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
               Description
             </label>
             <textarea
@@ -348,7 +500,7 @@ export default function TaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What needs to be accomplished and any key context..."
-              className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2 text-sm text-text-primary placeholder:text-slate-600 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary resize-none"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary resize-none"
             />
           </div>
 
@@ -356,7 +508,7 @@ export default function TaskModal({
           <div className="grid grid-cols-2 gap-3">
             {/* Type with M6 visual distinction */}
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Type
               </label>
               <div className="flex gap-2">
@@ -365,8 +517,8 @@ export default function TaskModal({
                   onClick={() => setType('feature')}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border text-xs font-semibold transition ${
                     type === 'feature'
-                      ? 'border-type-feature bg-type-feature/15 text-type-feature ring-1 ring-type-feature'
-                      : 'border-border-subtle bg-surface-page text-text-muted hover:border-border-hover hover:text-text-primary'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500 shadow-sm'
+                      : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
                   }`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,8 +531,8 @@ export default function TaskModal({
                   onClick={() => setType('bug')}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border text-xs font-semibold transition ${
                     type === 'bug'
-                      ? 'border-type-bug bg-type-bug/15 text-type-bug ring-1 ring-type-bug'
-                      : 'border-border-subtle bg-surface-page text-text-muted hover:border-border-hover hover:text-text-primary'
+                      ? 'border-red-500 bg-red-50 text-red-800 ring-1 ring-red-500 shadow-sm'
+                      : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
                   }`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,14 +545,14 @@ export default function TaskModal({
 
             {/* Status */}
             <div>
-              <label htmlFor="task-status" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+              <label htmlFor="task-status" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Status
               </label>
               <select
                 id="task-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary cursor-pointer"
               >
                 {STAGES.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -415,14 +567,14 @@ export default function TaskModal({
           <div className="grid grid-cols-2 gap-3">
             {/* Assignee */}
             <div>
-              <label htmlFor="task-assignee" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+              <label htmlFor="task-assignee" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Assignee
               </label>
               <select
                 id="task-assignee"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary cursor-pointer"
               >
                 {teamMembers.map((member) => (
                   <option key={member} value={member}>
@@ -434,7 +586,7 @@ export default function TaskModal({
 
             {/* Due Date */}
             <div>
-              <label htmlFor="task-due-date" className="block text-xs font-medium uppercase tracking-wider text-text-muted mb-1.5">
+              <label htmlFor="task-due-date" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Due Date
               </label>
               <input
@@ -442,30 +594,30 @@ export default function TaskModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary [color-scheme:dark]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
               />
             </div>
           </div>
 
           {/* Milestone 9: Curated Prompt Context Field + Milestone 10: Copy Context */}
-          <div className="rounded-lg border border-border-subtle bg-surface-page/70 p-3.5 space-y-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5 space-y-3 shadow-inner">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <label htmlFor="task-context" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                <label htmlFor="task-context" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-accent">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   Context
                 </label>
                 {/* Write / Preview Tab Toggles (M9 stretch) */}
-                <div className="flex items-center rounded-md border border-border-subtle bg-surface-page p-0.5 text-[10px]">
+                <div className="flex items-center rounded-md border border-slate-300 bg-white p-0.5 text-[10px]">
                   <button
                     type="button"
                     onClick={() => setActiveTab('write')}
                     className={`px-2 py-0.5 rounded transition ${
                       activeTab === 'write'
-                        ? 'bg-brand-accent/20 text-brand-accent font-semibold'
-                        : 'text-text-muted hover:text-text-primary'
+                        ? 'bg-orange-100 text-brand-accent font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     Write
@@ -475,8 +627,8 @@ export default function TaskModal({
                     onClick={() => setActiveTab('preview')}
                     className={`px-2 py-0.5 rounded transition ${
                       activeTab === 'preview'
-                        ? 'bg-brand-accent/20 text-brand-accent font-semibold'
-                        : 'text-text-muted hover:text-text-primary'
+                        ? 'bg-orange-100 text-brand-accent font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     Preview
@@ -490,7 +642,7 @@ export default function TaskModal({
                   type="button"
                   id="btn-copy-context-modal"
                   onClick={handleModalCopyContext}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-brand-accent/40 bg-brand-accent/10 px-2.5 py-1 text-xs font-mono text-brand-accent hover:bg-brand-accent hover:text-white transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-mono font-semibold text-orange-700 hover:bg-orange-600 hover:text-white transition active:scale-95 shadow-sm"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -500,7 +652,7 @@ export default function TaskModal({
 
                 {/* Copied to clipboard toast feedback (M10 stretch) */}
                 {copiedSuccess && (
-                  <span className="absolute -bottom-7 right-0 rounded bg-slate-900 border border-brand-accent/50 px-2 py-0.5 text-[10px] font-mono text-brand-accent shadow-lg animate-fade-in z-10 whitespace-nowrap">
+                  <span className="absolute -bottom-7 right-0 rounded bg-slate-900 border border-slate-700 px-2 py-0.5 text-[10px] font-mono text-white shadow-lg animate-fade-in z-10 whitespace-nowrap">
                     Copied to clipboard!
                   </span>
                 )}
@@ -515,29 +667,29 @@ export default function TaskModal({
                 value={context}
                 onChange={handleContextChange}
                 placeholder="Curated Markdown briefing for any AI tool..."
-                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3.5 py-2.5 text-xs font-mono text-text-primary placeholder:text-slate-600 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent resize-none leading-relaxed"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent resize-none leading-relaxed"
               />
             ) : (
-              <div className="min-h-[7.5rem] rounded-lg border border-border-subtle bg-surface-page/90 p-3 max-h-48 overflow-y-auto">
+              <div className="min-h-[7.5rem] rounded-lg border border-slate-300 bg-white p-3 max-h-48 overflow-y-auto">
                 <MarkdownPreview content={context} />
               </div>
             )}
 
             {/* Last updated timestamp hint (Milestone 9) */}
             {contextUpdatedAt ? (
-              <div className="text-[11px] font-mono text-text-muted">
+              <div className="text-[11px] font-mono text-slate-500">
                 last updated {relativeUpdated ? `${relativeUpdated} ` : ''}
-                <span className="opacity-70">(contextUpdatedAt: {contextUpdatedAt})</span>
+                <span className="opacity-80 font-medium">(contextUpdatedAt: {contextUpdatedAt})</span>
               </div>
             ) : (
-              <div className="text-[11px] font-mono text-text-muted opacity-70">
+              <div className="text-[11px] font-mono text-slate-400">
                 Not yet updated (will save timestamp automatically on edit)
               </div>
             )}
 
             {/* Optional AI Tool Dropdown (Milestone 9) */}
             <div className="pt-1">
-              <label htmlFor="task-context-tool" className="block text-xs font-medium text-text-muted mb-1">
+              <label htmlFor="task-context-tool" className="block text-xs font-semibold text-slate-600 mb-1">
                 Optional AI Context Tool
               </label>
               <select
@@ -547,7 +699,7 @@ export default function TaskModal({
                   setContextTool(e.target.value);
                   setIsContextDirty(true);
                 }}
-                className="w-full rounded-lg border border-border-subtle bg-surface-page px-3 py-1.5 text-xs text-text-primary focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent font-mono"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-800 focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent font-mono cursor-pointer"
               >
                 {AI_TOOLS.map((tool) => (
                   <option key={tool} value={tool}>
@@ -559,13 +711,13 @@ export default function TaskModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="mt-6 flex items-center justify-between border-t border-border-subtle pt-4">
+          <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
             <div>
               {isEditMode && !showDeleteConfirm && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="rounded-lg border border-red-500/30 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition-colors shadow-sm"
                 >
                   Delete Task
                 </button>
@@ -576,13 +728,13 @@ export default function TaskModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-border-subtle bg-surface-subtle px-4 py-2 text-sm font-medium text-text-muted hover:bg-slate-700 hover:text-text-primary transition-colors"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 active:scale-95 transition-all"
+                className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-glow-purple border border-brand-violet/30 hover:bg-brand-primary-hover active:scale-95 transition-all"
               >
                 {isEditMode ? 'Save Changes' : 'Create Task'}
               </button>

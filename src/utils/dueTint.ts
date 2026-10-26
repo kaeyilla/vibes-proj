@@ -77,39 +77,39 @@ export function getDueTintClasses(
       return {
         state,
         borderClass:
-          'border-due-overdue/60 bg-due-overdue/[0.04] shadow-[0_0_12px_rgba(239,68,68,0.15)]',
-        badgeClass: 'bg-due-overdue/15 text-due-overdue border-due-overdue/40',
-        dotClass: 'bg-due-overdue',
-        textClass: 'text-due-overdue',
+          'border-red-300 bg-red-50/20 hover:border-red-400 shadow-sm',
+        badgeClass: 'bg-red-50 text-red-700 border-red-200',
+        dotClass: 'bg-red-600',
+        textClass: 'text-red-700',
         label: 'Past Due',
       };
     case 'due-warning':
       return {
         state,
         borderClass:
-          'border-due-warning/60 bg-due-warning/[0.04] shadow-[0_0_12px_rgba(245,158,11,0.15)]',
-        badgeClass: 'bg-due-warning/15 text-due-warning border-due-warning/40',
-        dotClass: 'bg-due-warning',
-        textClass: 'text-due-warning',
+          'border-amber-300 bg-amber-50/20 hover:border-amber-400 shadow-sm',
+        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+        dotClass: 'bg-amber-600',
+        textClass: 'text-amber-700',
         label: 'Less than 24h',
       };
     case 'due-safe':
       return {
         state,
-        borderClass: 'border-due-safe/40 bg-surface-card hover:border-due-safe/80',
-        badgeClass: 'bg-due-safe/15 text-due-safe border-due-safe/30',
-        dotClass: 'bg-due-safe',
-        textClass: 'text-due-safe',
+        borderClass: 'border-slate-200 bg-white hover:border-emerald-400 shadow-sm',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dotClass: 'bg-emerald-600',
+        textClass: 'text-emerald-700',
         label: 'More than 2 Days',
       };
     case 'due-neutral':
     default:
       return {
         state,
-        borderClass: 'border-border-subtle bg-surface-card',
-        badgeClass: 'bg-surface-subtle text-text-muted border-border-subtle',
-        dotClass: 'bg-due-neutral',
-        textClass: 'text-due-neutral',
+        borderClass: 'border-slate-200 bg-white hover:border-slate-300 shadow-sm',
+        badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+        dotClass: 'bg-slate-400',
+        textClass: 'text-slate-600',
         label: status === 'done' ? 'Complete' : 'No deadline',
       };
   }
