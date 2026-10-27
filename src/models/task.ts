@@ -34,10 +34,10 @@ export type TaskType = (typeof TASK_TYPES)[number];
 
 /** The only valid assignees (PRD §8). */
 export const TEAM = [
-  'Kaenawah Yilla',
-  'Robert Flores',
-  'Juliette Ortega',
-  'Maguette Seck',
+  'Ken',
+  'Reuben',
+  'Sam',
+  'King',
 ] as const;
 export type Assignee = (typeof TEAM)[number];
 
@@ -223,24 +223,24 @@ export const SEED_TASKS: Task[] = [
     title: 'Build the four-column board',
     description: 'Render STAGES as columns and drop each task into its column.',
     status: 'in-progress',
-    assignee: 'Kaenawah Yilla',
+    assignee: 'Ken',
   }),
   createTask({
     title: 'Add / edit / delete modal',
     description: '"+" opens an empty modal; clicking a card opens it pre-filled.',
-    assignee: 'Juliette Ortega',
+    assignee: 'Reuben',
   }),
   createTask({
     title: 'Feature vs. bug colours',
     description: 'Apply the DESIGN.md tag colours to each card.',
-    assignee: 'Maguette Seck',
+    assignee: 'Sam',
   }),
   createTask({
     title: 'Due date shows wrong day near midnight',
     description: 'Use local dates, not UTC, when formatting dueDate.',
     type: 'bug',
     status: 'review',
-    assignee: 'Robert Flores',
+    assignee: 'King',
     dueDate: todayISO(),
   }),
 ];
