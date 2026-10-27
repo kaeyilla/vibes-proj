@@ -1,8 +1,8 @@
 # Vibecoding Project Tracker — Design
 
-**Status:** Completed (`design-done` milestone ready) · Design system and tokens aligned with `tailwind.config.js`.
+**Status:** Completed (`design-done` milestone ready) · Design system and tokens aligned with `tailwind.config.js` and current application implementation.
 
-**Why this file exists.** This tracker is your tool. It should look like *your* tool — not a generic Kanban with default Tailwind blue. Twenty minutes of design decisions here will be visible on every screen for the next six weeks of Module 5.
+**Why this file exists.** This tracker is your tool. It should look like *your* tool — not a generic Kanban with default Tailwind blue. Twenty minutes of design decisions here are visible on every screen across the project.
 
 **Who owns this.** Person B, during the same window the rest of the team is reviewing the PRD. By the time the team converges to start M4 (`data-model`), this file should be filled in and the colors should already be in `tailwind.config.js`.
 
@@ -10,104 +10,129 @@
 
 ## 1. Mood / vibe
 
-A high-velocity, ambient dark-mode cockpit designed for flow state—combining the surgical precision of Linear with the kinetic responsiveness of Raycast.
+A high-productivity, crisp, high-contrast light-mode workspace inspired by GitLab's signature identity and modern developer cockpit aesthetics. Clean, focused white surfaces paired with vibrant purple and tanuki orange accents provide surgical focus, excellent readability, and high accessibility.
 
-Two or three references that capture the vibe (links to dribbble shots, screenshots of apps you admire, Pinterest boards — anything visual):
+Two or three references that capture the vibe:
 
-- **Linear**: Minimalist dark cards, keyboard-driven feel, subtle 1px border hierarchy and high-contrast typography.
-- **Raycast**: Ambient dark obsidian background, vibrant neon status indicators, and clean monospace metadata pills.
-- **Vercel Dashboard**: Structured metric surfaces, crisp geometric layouts, and fluid interaction feedback.
+- **GitLab Next**: Signature deep purple (`#7B58CF`) and tanuki orange (`#FC6D26`) brand accents, sharp card hierarchy, high-contrast readable states, and developer-first information density.
+- **Linear / Raycast**: Surgical typography, fluid micro-interactions, responsive hover transitions, accessible focus states, and clean monospace metadata pills.
+- **Vercel / GitHub**: Pure white card surfaces (`#FFFFFF`) against soft slate page canvas (`#F8FAFC`), crisp 1px borders, and tactile elevation shadows.
 
 Anti-references — what we are explicitly **not** trying to look like:
 
 - Cluttered enterprise Jira with endless nested menus and sluggish gray forms.
 - Generic default Tailwind light-mode templates with standard corporate blue (`#3B82F6`).
+- Murky low-contrast dark themes where text is difficult to read in bright daylight.
+
+---
 
 ## 2. Color palette
 
-These are the colors the build milestones will reference. Once chosen, paste the hex values into `tailwind.config.js` so the rest of the team can use Tailwind utility classes (e.g. `bg-brand-primary`, `border-due-warning`).
+These are the active color tokens defined in `tailwind.config.js` and referenced across all components.
 
-### Brand
+### Brand Tokens
 
 | Token | Hex | Where it shows up |
 |---|---|---|
-| `brand-primary` | `#6366F1` | Header accents, "+" button, focus rings, primary actions |
-| `brand-accent` | `#06B6D4` | Cyan glow highlights, hover states, prompt badges, links |
-| `surface-page` | `#0B0F17` | Deep obsidian page background |
-| `surface-card` | `#131B2E` | Elevated dark card background |
-| `text-primary` | `#F8FAFC` | Main headings and body text (Slate 50) |
-| `text-muted` | `#94A3B8` | Captions, dates, column counts, prompt previews (Slate 400) |
+| `brand-primary` | `#7B58CF` | Primary actions ("+ New Task"), primary badges, focus outlines, header highlights |
+| `brand-primary-hover` | `#6E49CB` | Hover states for primary buttons and action controls |
+| `brand-accent` | `#FC6D26` | Tanuki orange accent, live pulse dot, sprint score highlights, active toggles |
+| `brand-accent-hover` | `#E24329` | Hover states for accent controls and sound toggle |
+| `surface-page` | `#F8FAFC` | Clean bright canvas background |
+| `surface-card` | `#FFFFFF` | Pure white elevated cards, modal panels, and surface containers |
+| `surface-card-hover` | `#F1F5F9` | Subtle hover card background highlight |
+| `surface-subtle` | `#F1F5F9` | Secondary light backgrounds, chip containers, tag pills |
+| `border-subtle` | `#E2E8F0` | Clean border dividers, card boundaries, and separator lines |
+| `border-hover` | `#CBD5E1` | Highlighting border on hover states |
+| `text-primary` | `#0F172A` | High-contrast charcoal headings and body text (Slate 900) |
+| `text-muted` | `#64748B` | Captions, secondary labels, column counts, dates (Slate 500) |
 
-### Task type (M6 `tag-style`)
+### Task Type (M6 `tag-style`)
 
 | Token | Hex | When used |
 |---|---|---|
-| `type-feature` | `#10B981` | Cards tagged `feature` (emerald accent stripe + pill icon) |
-| `type-bug` | `#F43F5E` | Cards tagged `bug` (crimson/rose accent stripe + pill icon) |
+| `type-feature` / `feature` | `#059669` | Cards tagged `feature` (emerald accent border/badge + tag pill) |
+| `type-bug` / `bug` | `#DC2626` | Cards tagged `bug` (ruby red accent border/badge + tag pill) |
 
-### Due-date states (M8 `due-tint`)
+### Due-Date States (M8 `due-tint`)
 
 | Token | Hex | When used |
 |---|---|---|
-| `due-safe` | `#10B981` | More than 2 days out (calm emerald border/dot) |
-| `due-warning` | `#F59E0B` | Less than 24 hours (amber attention border/dot) |
-| `due-overdue` | `#EF4444` | Past due (urgent coral border/dot) |
-| `due-neutral` | `#64748B` | Done (completed status overrides due date) |
+| `due-safe` | `#059669` | More than 2 days out (emerald border, dot, and badge) |
+| `due-warning` | `#D97706` | Less than 24 hours (amber attention border, dot, and badge) |
+| `due-overdue` | `#DC2626` | Past due (urgent red border, dot, badge, and pulse) |
+| `due-neutral` | `#64748B` | Completed or no deadline (slate border, dot, and badge) |
+
+### Custom Shadows
+
+- `shadow-glow-purple`: `0 4px 14px 0 rgba(123, 88, 207, 0.22)`
+- `shadow-glow-orange`: `0 4px 14px 0 rgba(252, 109, 38, 0.22)`
+- `shadow-glow-subtle`: `0 2px 10px 0 rgba(123, 88, 207, 0.12)`
+- `shadow-card-elevated`: `0 1px 3px 0 rgba(16, 24, 40, 0.08), 0 1px 2px -1px rgba(16, 24, 40, 0.05)`
+
+---
 
 ## 3. Typography
 
 | Role | Font | Why |
 |---|---|---|
-| Heading | `Inter, sans-serif` | Tight geometric tracking, punchy bold weights for instant scanability. |
-| Body | `Inter, sans-serif` | Clean, open counterforms optimized for UI reading on dark displays. |
-| Monospace (tags, badges, code) | `"JetBrains Mono", monospace` | Crisp character distinction for prompt tokens, assignees, and dates. |
+| Primary Sans | `"Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif` | Modern geometric humanist sans with high legibility and refined character terminals. |
+| Monospace (tags, badges, code) | `"JetBrains Mono", monospace` | Crisp character distinction for prompt tokens, assignees, dates, and metric chips. |
 
-Suggested sizes (override only if the design demands it):
+Suggested sizes:
 
-- Page title: 24 px / semibold
-- Section header: 16 px / semibold uppercase
-- Card title: 14 px / medium
+- Page title: 24 px / black (`font-black tracking-tight`)
+- Section header: 14 px / bold uppercase (`text-xs sm:text-sm font-bold uppercase tracking-wider`)
+- Card title: 14 px / bold (`text-sm font-bold`)
 - Body: 14 px / regular
-- Caption: 12 px / regular muted
-
-## 4. Component principles
-
-One short sentence per element. These set the tone for the build phase — Person A's modal and Person B's anchor board should both feel like they came from this doc.
-
-- **Cards:** Elevated dark surface (`#131B2E`) with a 1px border (`#1E293B`), subtle hover lift with cyan accent glow, and no heavy drop shadows.
-- **Buttons:** Solid indigo or cyan pill fills, 150ms hover scale transition, generous touch targets, and rounded-lg borders.
-- **Modal:** Centered, max-w-lg, dark glassmorphism backdrop (`rgba(11, 15, 23, 0.75)`) with backdrop blur, sharp input borders, and keyboard autofocus.
-- **Empty states:** 2px dashed border (`#1E293B`), subtle icon, and encouraging microcopy that prompts adding the first task.
-- **Drag affordance (if used):** Smooth card transitions with quick status drop targets and intuitive status dropdown controls.
-
-## 5. Voice / microcopy
-
-Three lines of microcopy that capture the tone of the product. Keep it short — these are the words a stressed user reads at 11pm.
-
-| Where | Text |
-|---|---|
-| "+" button label | `+ New Task` |
-| Empty column placeholder | `All clear here — ready for the next vibe.` |
-| Toast after "Copy as Prompt Context" | `Prompt context copied. Ready to paste into AI.` |
-| Confirm-delete message | `Delete this task permanently? You can't undo this action.` |
-| Handoff toast (M7 `task-owner`) | `Task handed off to {name}. Context is synced.` |
-
-## 6. Logo / wordmark
-
-The tracker probably doesn't need a logo, but it does need a name and a wordmark style.
-
-- **Product name:** `VibeSync` (Vibecoding Project Tracker)
-- **Wordmark style:** Bold `VibeSync` in Inter semibold with an electric cyan live-sync pulse dot and small monospace `v1.0` badge.
-
-## 7. Out of scope (this hackathon)
-
-To keep design tight, the following are explicitly not part of `design-done`:
-
-- A dark mode toggle. Pick one mode and ship it.
-- Multiple themes. One brand, applied consistently.
-- Animations beyond a 200 ms fade on toast notifications.
-- A custom icon set. Use [Lucide icons](https://lucide.dev) via Tailwind classes if you need any.
+- Caption / metadata: 11-12 px / medium font-mono (`text-xs` / `text-[11px]`)
 
 ---
 
-*DESIGN.md version: hackathon-starter v1*
+## 4. Component principles
+
+One short sentence per element. These set the tone across the application:
+
+- **Cards:** Crisp pure white surfaces (`#FFFFFF`) with 1px slate borders (`#E2E8F0`), elevated shadow on hover, left-edge accent indicator for task type, and draggable affordance.
+- **Buttons:** Solid purple (`#7B58CF`) or subtle slate pill fills, smooth 150ms hover scale transition, keyboard focus rings, and active press scaling.
+- **Modal:** Centered, max-w-xl, accessible dialog with high-contrast backdrop blur, clean slate input borders, keyboard focus rings, and autofocus.
+- **Focus Rings:** Accessibility-first 3px solid `#7B58CF` outline with `outline-offset: 2px` and `box-shadow: 0 0 10px rgba(123, 88, 207, 0.35)`.
+- **Empty States:** 2px dashed border (`border-slate-200`), clean icon, and encouraging microcopy for dropping or creating tasks.
+- **Drag Affordance (Secret Sauce):** HTML5 drag-and-drop between columns with smooth hover highlighting and optional Web Audio synthetic sound FX.
+- **Sprint Aura & Vibe Meter:** Real-time velocity heatmap with animated gradient progress bar (`from-cyan-500 via-brand-primary to-orange-500`), aura tiers, and sound FX toggle.
+- **Deliverable Anchor Board:** Collapsible quick-reference bar tracking presentation, demo, report, and documentation deliverables with direct anchor links.
+
+---
+
+## 5. Voice / microcopy
+
+Microcopy capturing the clean, productive tone of the application:
+
+| Where | Text |
+|---|---|
+| Header tagline | `Sprint tracker & assistive workflow intelligence` |
+| "+" button label | `+ New Task` |
+| Empty column placeholder | `All clear here — ready for the next vibe.` |
+| Toast after "Copy as Prompt Context" | `Prompt context copied to clipboard! Paste into your AI chat.` |
+| Task completed celebration | `"{title}" completed! +500 Aura level up! 🎉` |
+| Confirm-delete message | `Delete this task permanently? You can't undo this action.` |
+| Handoff toast (M7 `task-owner`) | `Task "{title}" reassigned to {owner}.` |
+
+---
+
+## 6. Logo / wordmark
+
+- **Product name:** `DIVERSIFIED` (Sprint tracker & assistive workflow intelligence)
+- **Wordmark style:** Bold `DIVERSIFIED` in Plus Jakarta Sans black weight with an animated pinging tanuki orange live-sync pulse dot and a `v1.1` purple monospace badge.
+
+---
+
+## 7. Scope & Extensions
+
+- **Single Theme:** GitLab-inspired high-contrast clean light theme applied consistently across all components.
+- **Accessibility:** High-contrast text compliance, distinct focus-visible rings (`#7B58CF`), ARIA landmarks, screen-reader live announcement region, and reduced-motion support.
+- **M12 Secret Sauce:** Seamless HTML5 drag-and-drop task movement paired with Web Audio synthetic sound effects and dynamic Sprint Aura heatmap velocity score.
+
+---
+
+*DESIGN.md version: 1.1 · Updated to match active codebase*
