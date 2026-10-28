@@ -5,10 +5,20 @@ import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import TeammateStrip from './components/TeammateStrip';
 import HandoffToast from './components/HandoffToast';
+import MockLogin from './components/MockLogin';
 import { useTasks } from './hooks/useTasks';
-import { TEAM } from './models/task';
+import { TEAM, SEED_TASKS } from './models/task';
 
 export default function App() {
+  // Current user / profile switcher state
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return localStorage.getItem('vibecoding_current_user') || null;
+    } catch {
+      return null;
+    }
+  });
+
   // M4 data-model & M5 persistence: typed, validated hook with seed fallback
   const [tasks, setTasks] = useTasks();
 
@@ -19,6 +29,30 @@ export default function App() {
   // M7 task-owner state: driver filter & handoff/copy/move toast
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+
+  function handleLogin(userName) {
+    setCurrentUser(userName);
+    try {
+      localStorage.setItem('vibecoding_current_user', userName);
+    } catch {
+      // ignore
+    }
+    setToastMessage(`Welcome, ${userName}! Logged in to sprint session.`);
+  }
+
+  function handleLogout() {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('vibecoding_current_user');
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleResetTasks() {
+    setTasks(SEED_TASKS);
+    setToastMessage('Tasks distributed and rebalanced evenly across the group!');
+  }
 
   /**
    * M7 task-owner: Reassign task to another teammate with visual toast confirmation.
@@ -89,6 +123,11 @@ export default function App() {
     ? tasks.filter((t) => t.assignee === selectedDriver)
     : tasks;
 
+  // Frictionless Entry: Display sleek MockLogin landing page when no profile is selected
+  if (!currentUser) {
+    return <MockLogin onLogin={handleLogin} currentUser={currentUser} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 text-slate-900 font-sans">
       {/* Accessibility Skip-to-Content Link for screen readers & keyboard navigation */}
@@ -127,8 +166,56 @@ export default function App() {
           </p>
         </div>
 
-        {/* Milestone 5: New Task Button with single plus icon */}
-        <div className="flex items-center gap-3">
+        {/* Profile indicator & Actions */}
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Active Logged-in User Chip & Switch Profile button */}
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-primary text-xs font-bold text-white shadow-sm"
+              aria-hidden="true"
+            >
+              {currentUser.slice(0, 2).toUpperCase()}
+            </span>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-800 leading-tight">
+                {currentUser}
+              </span>
+              <span className="text-[10px] text-slate-500 font-medium">
+                Active Session
+              </span>
+            </div>
+            <button
+              id="btn-switch-user"
+              type="button"
+              onClick={handleLogout}
+              title="Switch user profile"
+              className="ml-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600 hover:text-brand-primary hover:border-brand-primary/40 hover:bg-white transition-all active:scale-95"
+            >
+              Switch Profile
+            </button>
+          </div>
+
+          {/* Quick Rebalance / Distribute Tasks across group */}
+          <button
+            id="btn-rebalance-tasks"
+            type="button"
+            onClick={handleResetTasks}
+            title="Distribute sample tasks evenly across Reuben, Ken, Sam, and King"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:text-brand-primary hover:border-brand-primary/30 hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
+          >
+            <svg
+              className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Rebalance Board</span>
+          </button>
+
+          {/* Milestone 5: New Task Button with single plus icon */}
           <button
             id="btn-new-task"
             type="button"
@@ -185,6 +272,7 @@ export default function App() {
           setEditingTask(null);
         }}
         teamMembers={TEAM}
+        currentUser={currentUser}
       />
 
       {/* M7 Handoff & M10 Copy Context Acknowledgment Toast */}

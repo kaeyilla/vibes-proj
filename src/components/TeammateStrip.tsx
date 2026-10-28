@@ -10,6 +10,30 @@ export const TEAMMATE_THEMES: Record<
   string,
   { bg: string; text: string; border: string; glow: string }
 > = {
+  Reuben: {
+    bg: 'bg-purple-100',
+    text: 'text-purple-800',
+    border: 'border-purple-300',
+    glow: 'rgba(123,88,207,0.2)',
+  },
+  Ken: {
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
+    border: 'border-orange-300',
+    glow: 'rgba(252,109,38,0.2)',
+  },
+  Sam: {
+    bg: 'bg-sky-100',
+    text: 'text-sky-800',
+    border: 'border-sky-300',
+    glow: 'rgba(14,165,233,0.2)',
+  },
+  King: {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800',
+    border: 'border-emerald-300',
+    glow: 'rgba(16,185,129,0.2)',
+  },
   'Kaenawah Yilla': {
     bg: 'bg-purple-100',
     text: 'text-purple-800',

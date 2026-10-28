@@ -79,6 +79,7 @@ export default function TaskModal({
   onDelete,
   onClose,
   teamMembers = TEAM,
+  currentUser = '',
 }) {
   const isEditMode = Boolean(task && task.id);
 
@@ -117,7 +118,7 @@ export default function TaskModal({
         setDescription(task.description || '');
         setType(task.type || 'feature');
         setStatus(task.status || 'todo');
-        setAssignee(task.assignee || (teamMembers.length > 0 ? teamMembers[0] : ''));
+        setAssignee(task.assignee || (currentUser || (teamMembers.length > 0 ? teamMembers[0] : '')));
         setDueDate(task.dueDate || '');
         // M9 context fields
         setContext(task.context || '');
@@ -130,7 +131,7 @@ export default function TaskModal({
         setDescription('');
         setType('feature');
         setStatus('todo');
-        setAssignee(teamMembers.length > 0 ? teamMembers[0] : '');
+        setAssignee(currentUser || (teamMembers.length > 0 ? teamMembers[0] : ''));
         setDueDate('');
         // M9 placeholder template pre-fill
         setContext(CONTEXT_TEMPLATE);

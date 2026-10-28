@@ -34,8 +34,8 @@ export type TaskType = (typeof TASK_TYPES)[number];
 
 /** The only valid assignees (PRD §8). */
 export const TEAM = [
-  'Ken',
   'Reuben',
+  'Ken',
   'Sam',
   'King',
 ] as const;
@@ -193,17 +193,27 @@ export function isTask(value: unknown): value is Task {
  */
 export function parseTasks(raw: unknown): Task[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item: unknown): Task | null => {
+  const parsed = raw
+    .map((item: unknown, index: number): Task | null => {
       if (typeof item !== 'object' || item === null) return null;
       const t = item as Record<string, unknown>;
+
+      // Map legacy names or distribute evenly
+      let resolvedAssignee: Assignee;
+      if (t.assignee === 'Kaenawah Yilla') resolvedAssignee = 'Reuben';
+      else if (t.assignee === 'Robert Flores') resolvedAssignee = 'Ken';
+      else if (t.assignee === 'Juliette Ortega') resolvedAssignee = 'Sam';
+      else if (t.assignee === 'Maguette Seck') resolvedAssignee = 'King';
+      else if (isOneOf(TEAM, t.assignee)) resolvedAssignee = t.assignee;
+      else resolvedAssignee = TEAM[index % TEAM.length];
+
       return {
         id: typeof t.id === 'string' && t.id ? t.id : `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         title: typeof t.title === 'string' && t.title ? t.title : 'Untitled Task',
         description: typeof t.description === 'string' ? t.description : '',
         type: t.type === 'bug' ? 'bug' : 'feature',
         status: isOneOf(STATUS_IDS, t.status) ? t.status : 'todo',
-        assignee: isOneOf(TEAM, t.assignee) ? t.assignee : (TEAM[0] || 'Kaenawah Yilla'),
+        assignee: resolvedAssignee,
         dueDate: typeof t.dueDate === 'string' && t.dueDate ? t.dueDate : null,
         createdDate: typeof t.createdDate === 'string' && t.createdDate ? t.createdDate : todayISO(),
         context: typeof t.context === 'string' ? t.context : '',
@@ -212,10 +222,22 @@ export function parseTasks(raw: unknown): Task[] {
       };
     })
     .filter((t): t is Task => t !== null);
+
+  // If all or nearly all stored tasks were lumped onto Ken (due to earlier legacy fallback),
+  // split them up across all four team members (Reuben, Ken, Sam, King)
+  const kenCount = parsed.filter((t) => t.assignee === 'Ken').length;
+  if (parsed.length > 1 && (kenCount === parsed.length || (kenCount >= 3 && kenCount >= parsed.length * 0.75))) {
+    return parsed.map((t, idx) => ({
+      ...t,
+      assignee: TEAM[idx % TEAM.length],
+    }));
+  }
+
+  return parsed;
 }
 
 // ---------------------------------------------------------------------------
-// Seed data — so the board isn't empty on first load (M4)
+// Seed data — evenly distributed across team members and columns (M4)
 // ---------------------------------------------------------------------------
 
 export const SEED_TASKS: Task[] = [
@@ -223,16 +245,18 @@ export const SEED_TASKS: Task[] = [
     title: 'Build the four-column board',
     description: 'Render STAGES as columns and drop each task into its column.',
     status: 'in-progress',
-    assignee: 'Ken',
-  }),
-  createTask({
-    title: 'Add / edit / delete modal',
-    description: '"+" opens an empty modal; clicking a card opens it pre-filled.',
     assignee: 'Reuben',
   }),
   createTask({
-    title: 'Feature vs. bug colours',
-    description: 'Apply the DESIGN.md tag colours to each card.',
+    title: 'PR Review: Component Architecture & Types',
+    description: 'Verify accessibility, keyboard focus trapping, and clean props contract.',
+    status: 'review',
+    assignee: 'Ken',
+  }),
+  createTask({
+    title: 'Sprint roadmap & milestone coordination',
+    description: 'Align Anchor Board deliverables and monitor team velocity.',
+    status: 'todo',
     assignee: 'Sam',
   }),
   createTask({
@@ -242,6 +266,31 @@ export const SEED_TASKS: Task[] = [
     status: 'review',
     assignee: 'King',
     dueDate: todayISO(),
+  }),
+  createTask({
+    title: 'Feature vs. bug colours & due-date tints',
+    description: 'Apply the DESIGN.md tag colours and due-date tints to each card.',
+    status: 'done',
+    assignee: 'Reuben',
+  }),
+  createTask({
+    title: 'Audit AI prompt context copy payloads',
+    description: 'Ensure prompt history and tool source metadata copy cleanly to clipboard.',
+    status: 'done',
+    assignee: 'Ken',
+  }),
+  createTask({
+    title: 'Presentation & demo slide deck synchronization',
+    description: 'Link final presentation slides into the top Anchor Board slot.',
+    status: 'in-progress',
+    assignee: 'Sam',
+  }),
+  createTask({
+    title: 'Automated test suite & regression coverage',
+    description: 'Run edge-case test suites and validate prompt context sync.',
+    type: 'bug',
+    status: 'todo',
+    assignee: 'King',
   }),
 ];
 
